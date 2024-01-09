@@ -8,6 +8,7 @@ const dotenv = require('dotenv');
 const app = express();
 
 const userRoutes = require('./routes/userRoutes');
+const categoryRoutes = require('./routes/categoriesTopicsRoutes');
 
 dotenv.config();
 
@@ -19,7 +20,8 @@ app.use(cors());
 app.use(express.json())
 app.use(express.urlencoded({extended: true}))
 
-app.use('/api/v1/user', userRoutes)
+app.use('/api/v1/user', userRoutes);
+app.use('/api/v1/categories', categoryRoutes);
 
 app.get("/", (req, res) => {
     return res.status(200).send("<h1>Hello sdfdsfsdd sdsdfds</h1>")
