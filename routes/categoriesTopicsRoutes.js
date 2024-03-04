@@ -1,10 +1,12 @@
 const express = require('express');
-const { getCategories } = require('../controllers/categoriesTopics');
+const { getCategories, getTopicsFromCategories, getInterviewQuestionsData } = require('../controllers/categoriesTopics');
 
 
 const router = express.Router();
 
-router.get("/categories", getCategories);
+router.get("/getCategories", getCategories);
+router.get("/getTopics/:categoryId", getTopicsFromCategories);
+router.get("/getInterviewQA/:topicId", getInterviewQuestionsData);
 
 
 module.exports = router;
