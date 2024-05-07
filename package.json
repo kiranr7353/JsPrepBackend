@@ -16,11 +16,13 @@
     "express": "^4.18.2",
     "firebase": "^10.7.1",
     "firebase-admin": "^12.0.0",
+    "formidable": "^3.5.1",
     "google-auth-library": "^9.4.1",
     "helmet": "^7.1.0",
     "morgan": "^1.10.0",
     "node-fetch": "^2.7.0",
     "nodemon": "^3.0.2",
-    "python": "^0.0.4"
+    "python": "^0.0.4",
+    "uuid-v4": "^0.1.0"
   }
 }
