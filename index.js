@@ -9,6 +9,7 @@ const app = express();
 
 const userRoutes = require('./routes/userRoutes');
 const categoryRoutes = require('./routes/categoriesTopicsRoutes');
+const conceptRoutes = require('./routes/conceptsRoutes');
 
 dotenv.config();
 
@@ -22,6 +23,7 @@ app.use(express.urlencoded({extended: true}))
 
 app.use('/api/v1/user', userRoutes);
 app.use('/api/v1/categories', categoryRoutes);
+app.use('/api/v1/concepts', conceptRoutes);
 
 app.get("/", (req, res) => {
     return res.status(200).send("<h1>Hello sdfdsfsdd sdsdfds</h1>")

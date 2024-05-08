@@ -32,7 +32,6 @@ exports.getCategories = async (req, res) => {
 exports.getTopicsFromCategories = async (req, res) => {
     try {
         const { categoryId } = req.params;
-        console.log(categoryId);
         let docref = await db.collection('categories').doc(`${categoryId + '_cat852471JsPrep'}`).get();
         let topics = await db.collection('topics').where('categoryId', '==', docref.ref).get();
         if (topics.empty) {
@@ -357,8 +356,7 @@ exports.editTopic = async (req, res) => {
 
 exports.deleteTopic = async (req, res) => {
     try {
-        const batch = db.batch();
-        const { topicId, topicName } = req.body;
+        const { topicId, topicName, categoryId } = req.body;
         let topic = await db.collection('topics').where('topicId', '==', topicId).get();
         if (topic.empty) {
             res.status(404).json({
@@ -367,16 +365,11 @@ exports.deleteTopic = async (req, res) => {
             })
             return;
         }
-        // topic.forEach(doc => {
-        //     console.log(doc.data());
-        // });
-        db.collection('topics').doc(topic).delete().then(res => {
-            res.status(200).json({
-                message: 'Success',
-                detail: `${topicName} deleted successfully`
-            })
-        }).catch(err => console.log(err));
-        
+        await db.collection('topics').doc(`${topicId}_cat_${categoryId}852471JsPrep`).delete();
+        res.status(200).json({
+            message: 'Success',
+            detail: `${topicName} deleted successfully`
+        })
     } catch (error) {
         handleFailError(res, error);
     }
