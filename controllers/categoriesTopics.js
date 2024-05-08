@@ -46,7 +46,7 @@ exports.getTopicsFromCategories = async (req, res) => {
         topics.forEach(doc => {
             topicsData.push(doc.data());
         });
-        const topicsFromResponse = topicsData?.length > 0 && topicsData?.map(el => ({ topicId: el.topicId, topicName: el.topicName }));
+        const topicsFromResponse = topicsData?.length > 0 && topicsData?.map(el => ({ topicId: el.topicId, topicName: el.topicName, imageUrl: el.imageUrl }));
         res.status(200).json({
             success: true,
             topics: topicsFromResponse
@@ -214,6 +214,169 @@ exports.setFavoriteQuestion = async (req, res) => {
     try {
         const { questionNumber } = req.body;
 
+    } catch (error) {
+        handleFailError(res, error);
+    }
+}
+
+const handleAddCategoryValidation = (categoryId, categoryName, enabled, imageUrl) => {
+
+}
+
+exports.addCategory = async (req, res) => {
+    try {
+        const { categoryId, categoryName, enabled, imageUrl } = req.body;
+        handleAddCategoryValidation(categoryId, categoryName, enabled, imageUrl);
+        const categoryData = { categoryId, categoryName, enabled, imageUrl }
+        const categoryRef = db.collection('categories');
+        const snapshot = await categoryRef.get();
+        if (snapshot.empty) {
+            res.status(404).json({
+                message: 'No categories found',
+                detail: "No categories found"
+            })
+            return;
+        }
+        const categories = [];
+        snapshot.forEach(doc => {
+            categories.push(doc.data())
+        });
+        for (let i = 0; i < categories.length; i++) {
+            if (categories[i].categoryId === categoryId || categories[i].categoryName === categoryName) {
+                res.status(400).json({
+                    message: 'Duplicate Category',
+                    detail: `${categoryName} already exists`
+                })
+                return;
+            }
+        }
+        const docRef = db.collection('categories').doc(`${categoryId + `_cat852471JsPrep`}`);
+        await docRef.set(categoryData);
+        res.status(201).json({
+            success: true,
+            message: `${categoryName} added successfully`
+        })
+    } catch (error) {
+        handleFailError(res, error);
+    }
+}
+
+exports.editCategory = async (req, res) => {
+    try {
+        const { categoryId, categoryName, enabled, imageUrl } = req.body;
+        handleAddCategoryValidation(categoryId, categoryName, enabled, imageUrl);
+        const categoryData = { categoryId, categoryName, enabled, imageUrl }
+        let category = await db.collection('categories').where('categoryId', '==', categoryId).get();
+        if (category.empty) {
+            res.status(404).json({
+                message: `Not Found`,
+                detail: `${categoryName} not found`
+            })
+            return;
+        }
+        category.forEach(doc => {
+            doc.ref.update(categoryData);
+        });
+        res.status(201).json({
+            success: true,
+            message: `${categoryName} Updated Successfully`
+        })
+    } catch (error) {
+        handleFailError(res, error);
+    }
+}
+
+const handleAddTopicValidation = (topicId, topicName, imageUrl, categoryId) => {
+
+}
+
+exports.addTopic = async (req, res) => {
+    try {
+        const { topicId, topicName, imageUrl, categoryId } = req.body;
+        handleAddTopicValidation(topicId, topicName, imageUrl, categoryId);
+        let topicData = { topicId, topicName, imageUrl }
+        const topicsRef = db.collection('topics');
+        const snapshot = await topicsRef.get();
+        if (snapshot.empty) {
+            res.status(404).json({
+                message: 'No topics found',
+                detail: "No topics found"
+            })
+            return;
+        }
+        const topics = [];
+        snapshot.forEach(doc => {
+            topics.push(doc.data())
+        });
+        for (let i = 0; i < topics.length; i++) {
+            if (topics[i].topicId === topicId || topics[i].topicName === topicName) {
+                res.status(400).json({
+                    message: 'Duplicate Topic',
+                    detail: `${topicName} already exists`
+                })
+                return;
+            }
+        }
+        const docRef = db.collection('topics').doc(`${topicId + `_cat_${categoryId}852471JsPrep`}`);
+        topicData.categoryId = db.doc(`/categories/${categoryId}_cat852471JsPrep`);
+        await docRef.set(topicData);
+        res.status(201).json({
+            success: true,
+            message: `${topicName} added successfully`
+        })
+    } catch (error) {
+        handleFailError(res, error);
+    }
+}
+
+exports.editTopic = async (req, res) => {
+    try {
+        const { topicId, topicName, imageUrl, categoryId } = req.body;
+        handleAddTopicValidation(topicId, topicName, imageUrl, categoryId);
+        let topicData = { topicId, topicName, imageUrl }
+        let topic = await db.collection('topics').where('topicId', '==', topicId).get();
+        if (topic.empty) {
+            res.status(404).json({
+                message: `Not Found`,
+                detail: `${topicName} not found`
+            })
+            return;
+        }
+        topicData.categoryId = db.doc(`/categories/${categoryId}_cat852471JsPrep`);
+        topic.forEach(doc => {
+            doc.ref.update(topicData);
+        });
+        res.status(201).json({
+            success: true,
+            message: `${topicName} Updated Successfully`
+        })
+    } catch (error) {
+        handleFailError(res, error);
+    }
+}
+
+exports.deleteTopic = async (req, res) => {
+    try {
+        const batch = db.batch();
+        const { topicId, topicName } = req.body;
+        let topic = await db.collection('topics').where('topicId', '==', topicId).get();
+        if (topic.empty) {
+            res.status(404).json({
+                message: `Not Found`,
+                detail: `${topicName} not found`
+            })
+            return;
+        }
+        // topic.forEach(doc => {
+        //     console.log(doc.data());
+        // });
+        db.collection('topics').doc(topic).delete().then(res => {
+            res.status(200).json({
+                message: 'Success',
+                detail: `${topicName} deleted successfully`
+            })
+        }).catch(err => console.log(err));
+        
     } catch (error) {
         handleFailError(res, error);
     }
