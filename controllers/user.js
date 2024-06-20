@@ -5,13 +5,46 @@ const SCOPES = ['https://www.googleapis.com/auth/cloud-platform'];
 const { handleUserSignUpErrors, handleUserLoginErrors } = require('../utils/handleAuthErrors');
 const { handleFailError } = require('../utils/handleError');
 const { setToken } = require('../utils/authToken');
+const { handleRegisterValidation } = require('../utils/handleValidation');
 const db = admin.firestore();
 const auth = admin.auth();
 db.settings({ ignoreUndefinedProperties: true })
 
 exports.register = async (req, res) => {
-    const { phoneNumber, firstName, lastName, dob, idToken, refreshToken } = req.body;
-    const userData = { phoneNumber, firstName, lastName, dob }
+    const { phoneNumber, firstName, lastName, dob, password, confirmPassword, idToken, refreshToken, email, code } = req.body;
+    const userData = { phoneNumber, firstName, lastName, dob, code };
+    if(!firstName) {
+        handleRegisterValidation(res, firstName, 'Missing mandatory field', "Please enter First Name", 400);
+        return;
+    }
+    if(!lastName) {
+        handleRegisterValidation(res, lastName, 'Missing mandatory field', "Please enter Last Name", 400);
+        return;
+    }
+    if(!dob) {
+        handleRegisterValidation(res, dob, 'Missing mandatory field', "Please select Date of Birth", 400);
+        return;
+    }
+    if(!phoneNumber) {
+        handleRegisterValidation(res, phoneNumber, 'Missing mandatory field', "Please enter Phone Number", 400);
+        return;
+    }
+    if(!phoneNumber) {
+        handleRegisterValidation(res, phoneNumber, 'Missing mandatory field', "Please enter Phone Number", 400);
+        return;
+    }
+    if(!confirmPassword) {
+        handleRegisterValidation(res, confirmPassword, 'Missing mandatory field', "Confirm Password is empty", 400);
+        return;
+    }
+    if(!email) {
+        handleRegisterValidation(res, email, 'Missing mandatory field', "Please enter email", 400);
+        return;
+    }
+    if(password !== confirmPassword) {
+        handleRegisterValidation(res, confirmPassword, 'Invalid Data', "Password and Confirm Password does not match", 400);
+        return;
+    }
     auth.verifyIdToken(idToken).then(async (decodedToken) => {
         if (decodedToken?.uid) {
             const setUserData = { ...userData, uid: decodedToken?.uid, email: decodedToken?.email }
