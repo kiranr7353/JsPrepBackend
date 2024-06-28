@@ -7,7 +7,7 @@ exports.isAuthenticatedUser = async (req, res, next) => {
     try {
         let token = req?.get('Authorization');
         console.log(token);
-        let refreshToken = req?.get('refreshToken');
+        let refreshToken = req?.get('RefreshToken');
         if (!token) {
             return res.status(401).json({
                 message: "Unathorized"
@@ -15,32 +15,41 @@ exports.isAuthenticatedUser = async (req, res, next) => {
         }
         if (token?.startsWith("Bearer ")) {
             token = token.slice(7, token?.length).trimLeft();
+            if(token.slice(7, token?.length).trimLeft()) {
+                auth.verifyIdToken(token).then(async(decodedToken) => {
+                    console.log(decodedToken, 'decodedToken');
+                    if (decodedToken?.uid) {
+                        req.user = decodedToken?.uid
+                        next()
+                    }
+                }).catch(async (error) => {
+                    console.log(error, 'error1');
+                    if (error?.errorInfo?.code === 'auth/id-token-expired') {
+                        const response = await handleRefreshToken(refreshToken);
+                        console.log(response, 'response');
+                        if (response?.id_token) {
+                            auth.verifyIdToken(response?.id_token).then((decodedToken) => {
+                                if (decodedToken?.uid) {
+                                    req.user = decodedToken?.user_id
+                                    next();
+                                }
+                            }).catch((error) => {
+                                if (error) {
+                                    res.status(401).json({ message: 'Unauthorized' })
+                                }
+                            })
+                        } else {
+                            res.status(401).json({ message: 'Unauthorized' })
+                        }
+                    }
+                })
+            } else {
+                return res.status(401).json({
+                    message: "Unathorized"
+                })
+            }
         }
-        auth.verifyIdToken(token).then(async(decodedToken) => {
-            console.log(decodedToken, 'decodedToken');
-            if (decodedToken?.uid) {
-                req.user = decodedToken?.uid
-                next()
-            }
-        }).catch(async (error) => {
-            console.log(error, 'error1');
-            if (error?.errorInfo?.code === 'auth/id-token-expired') {
-                const response = await handleRefreshToken(refreshToken);
-                console.log(response, 'response');
-                if (response?.id_token) {
-                    auth.verifyIdToken(response?.id_token).then((decodedToken) => {
-                        if (decodedToken?.uid) {
-                            req.user = decodedToken?.user_id
-                            next();
-                        }
-                    }).catch((error) => {
-                        if (error) {
-                            res.status(401).json({ message: 'Session expired. Please login again' })
-                        }
-                    })
-                }
-            }
-        })
+       
     } catch (error) {
         console.log(error, 'error2');
 

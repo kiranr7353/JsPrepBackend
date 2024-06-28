@@ -1,10 +1,34 @@
 const admin = require('../firebaseConfig');
 const { handleFailError } = require('../utils/handleError');
 const db = admin.firestore();
-const {formidable} = require('formidable');
+const { formidable } = require('formidable');
 const uuid = require('uuid-v4');
 
 const bucket = admin.storage().bucket();
+
+exports.getCategoriesList = async (req, res) => {
+    try {
+        const categoryListRef = db.collection('categoryList');
+        const snapshot = await categoryListRef.get();
+        if (snapshot.empty) {
+            res.status(404).json({
+                message: 'No category list found',
+                detail: "No categories ist found"
+            })
+            return;
+        }
+        const categoriesList = [];
+        snapshot.forEach(doc => {
+            categoriesList.push(doc.data())
+        });
+        res.status(200).json({
+            success: true,
+            categoriesList
+        })
+    } catch (error) {
+        handleFailError(res, error);
+    }
+}
 
 exports.getCategories = async (req, res) => {
     try {
@@ -29,6 +53,54 @@ exports.getCategories = async (req, res) => {
         handleFailError(res, error);
     }
 }
+
+exports.getCategoriesFromList = async (req, res) => {
+    try {
+        const { categoryList } = req.params;
+        if (categoryList && categoryList !== 'all') {
+            let docref = await db.collection('categoryList').doc(`${categoryList + '_category_852471JsPrep'}`).get();
+            let categoriesRef = await db.collection('categories').where('categoryList', '==', docref.ref).get();
+            if (categoriesRef.empty) {
+                res.status(404).json({
+                    message: 'No categories found',
+                    detail: `No categories found for ${categoryList}`
+                })
+                return;
+            }
+            const categories = [];
+            categoriesRef.forEach(doc => {
+                categories.push(doc.data())
+            });
+            const categoriesFromResponse = categories?.length > 0 && categories?.map(el => ({ categoryName: el.categoryName, categoryId: el.categoryId, imageUrl: el.imageUrl, enabled: el.enabled, description: el.description }));
+            res.status(200).json({
+                success: true,
+                categories: categoriesFromResponse
+            })
+        } else {
+            const categoryRef = db.collection('categories');
+            const snapshot = await categoryRef.get();
+            if (snapshot.empty) {
+                res.status(404).json({
+                    message: 'No categories found',
+                    detail: "No categories found"
+                })
+                return;
+            }
+            const categories = [];
+            snapshot.forEach(doc => {
+                categories.push(doc.data())
+            });
+            const categoriesFromResponse = categories?.length > 0 && categories?.map(el => ({ categoryName: el.categoryName, categoryId: el.categoryId, imageUrl: el.imageUrl, enabled: el.enabled, description: el.description }));
+            res.status(200).json({
+                success: true,
+                categories: categoriesFromResponse
+            })
+        }
+    } catch (error) {
+        handleFailError(res, error);
+    }
+}
+
 exports.getTopicsFromCategories = async (req, res) => {
     try {
         const { categoryId } = req.params;
@@ -45,7 +117,7 @@ exports.getTopicsFromCategories = async (req, res) => {
         topics.forEach(doc => {
             topicsData.push(doc.data());
         });
-        const topicsFromResponse = topicsData?.length > 0 && topicsData?.map(el => ({ topicId: el.topicId, topicName: el.topicName, imageUrl: el.imageUrl }));
+        const topicsFromResponse = topicsData?.length > 0 && topicsData?.map(el => ({ topicId: el.topicId, topicName: el.topicName, imageUrl: el.imageUrl, displayOrder: el?.displayOrder }));
         res.status(200).json({
             success: true,
             topics: topicsFromResponse
@@ -55,7 +127,7 @@ exports.getTopicsFromCategories = async (req, res) => {
     }
 }
 
-const handleFileUpload = async(filepath, destination) => {
+const handleFileUpload = async (filepath, destination) => {
     try {
         const metadata = {
             metadata: {
@@ -72,17 +144,17 @@ const handleFileUpload = async(filepath, destination) => {
             destination: destination
         });
     } catch (error) {
-        
+
     }
 }
 
 exports.getTest = async (req, res) => {
     try {
         const form = formidable({});
-        form.parse(req, async(err, fields, files) => {
+        form.parse(req, async (err, fields, files) => {
             if (err) {
-              console.log(err);
-              return;
+                console.log(err);
+                return;
             }
             // for (let i = 0; i < files?.image?.length; i++) {
             //     const filepath = files?.image[i]?.filepath;
@@ -92,7 +164,7 @@ exports.getTest = async (req, res) => {
             // }
             console.log(JSON.parse(fields.answersData))
             res.json({ fields, files });
-          });
+        });
     } catch (error) {
         console.log(error);
     }
@@ -121,7 +193,7 @@ exports.createInterviewQuestions = async (req, res) => {
             questionNumbers.push(doc.data()?.questionNumber);
             question.push(doc.data()?.questionTitle);
         });
-        if(questionNumbers.includes(payload?.questionNumber) || question.includes(payload?.questionTitle)) {
+        if (questionNumbers.includes(payload?.questionNumber) || question.includes(payload?.questionTitle)) {
             res.status(400).json({
                 message: 'Duplicate question number or Duplicate question',
                 detail: `Question already exists. Please try again with different question or different question number`
@@ -203,7 +275,7 @@ exports.getInterviewQuestionsData = async (req, res) => {
 exports.setFavoriteTopic = async (req, res) => {
     try {
         const { topicId } = req.body;
-        
+
     } catch (error) {
         handleFailError(res, error);
     }
