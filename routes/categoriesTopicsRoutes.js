@@ -5,21 +5,21 @@ const { isAuthenticatedUser } = require('../middlewares/auth');
 
 const router = express.Router();
 
-router.get("/getCategoryList", getCategoriesList);
-router.get("/getCategories", getCategories);
-router.get("/getCategoriesFromList/:categoryList", getCategoriesFromList);
-router.get("/getTopics/:categoryId", getTopicsFromCategories);
-router.get("/getInterviewQA/:topicId", getInterviewQuestionsData);
-router.post("/test", getTest);
-router.post("/createInterviewQuestions", createInterviewQuestions);
-router.post("/updateInterviewQuestion", updateInterviewQuestion);
+router.get("/getCategoryList", isAuthenticatedUser, getCategoriesList);
+router.get("/getCategories", isAuthenticatedUser, getCategories);
+router.get("/getCategoriesFromList/:categoryList", isAuthenticatedUser, getCategoriesFromList);
+router.get("/getTopics/:categoryId", isAuthenticatedUser, getTopicsFromCategories);
+router.get("/getInterviewQA/:topicId", isAuthenticatedUser, getInterviewQuestionsData);
+router.post("/test", isAuthenticatedUser, getTest);
+router.post("/createInterviewQuestions", isAuthenticatedUser, createInterviewQuestions);
+router.post("/updateInterviewQuestion", isAuthenticatedUser, updateInterviewQuestion);
 router.post("/setFavoriteTopic", isAuthenticatedUser , setFavoriteTopic);
 router.post("/setFavoriteQuestion", isAuthenticatedUser,  setFavoriteQuestion);
-router.post("/addCategory",  addCategory);
-router.post("/editCategory",  editCategory);
-router.post("/addTopic",  addTopic);
-router.post("/editTopic",  editTopic);
-router.post("/deleteTopic",  deleteTopic);
+router.post("/addCategory", isAuthenticatedUser,  addCategory);
+router.post("/editCategory", isAuthenticatedUser,  editCategory);
+router.post("/addTopic", isAuthenticatedUser,  addTopic);
+router.post("/editTopic", isAuthenticatedUser,  editTopic);
+router.post("/deleteTopic", isAuthenticatedUser,  deleteTopic);
 
 
 
