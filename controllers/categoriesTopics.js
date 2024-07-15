@@ -117,7 +117,7 @@ exports.getTopicsFromCategories = async (req, res) => {
         topics.forEach(doc => {
             topicsData.push(doc.data());
         });
-        const topicsFromResponse = topicsData?.length > 0 && topicsData?.map(el => ({ topicId: el.topicId, topicName: el.topicName, imageUrl: el.imageUrl, displayOrder: el?.displayOrder }));
+        const topicsFromResponse = topicsData?.length > 0 && topicsData?.map(el => ({ topicId: el.topicId, topicName: el.topicName, imageUrl: el.imageUrl, displayOrder: el?.displayOrder, description: el?.description }));
         res.status(200).json({
             success: true,
             topics: topicsFromResponse

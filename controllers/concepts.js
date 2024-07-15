@@ -19,7 +19,7 @@ exports.getConcepts = async (req, res) => {
         concepts.forEach(doc => {
             conceptsData.push(doc.data());
         });
-        const conceptsFromResponse = conceptsData?.length > 0 && conceptsData?.map(el => ({ id: el.id, description: el.description, title: el.title, imageUrl: el.imageUrl, points: el.points, tableData: el.tableData, hasPoints: el.hasPoints, hasTable: el.hasTable, columnHeader: el.columnHeader }));
+        const conceptsFromResponse = conceptsData?.length > 0 && conceptsData?.map(el => ({ id: el.id, data: el.data, title: el.title }));
         res.status(200).json({
             success: true,
             concepts: conceptsFromResponse
@@ -121,4 +121,44 @@ exports.editConcepts = async (req, res) => {
     } catch (error) {
         handleFailError(res, error);
     }
+}
+
+exports.editDescriptionInSection = async (req, res) => {
+        const { categoryId, data, sectionId, topicId, title } = req.body;
+        let snap = await db.collection('topics').doc(`${topicId + `_cat_${categoryId}852471JsPrep`}`).get();
+        if (!snap.exists) {
+            res.status(404).json({
+                message: 'No concepts found',
+                detail: `No concepts found for ${topicId} in ${categoryId}`
+            })
+            return;
+        } else if (snap.data().topicId !== topicId) {
+            res.status(404).json({
+                message: 'No concepts found',
+                detail: `No concepts found for ${topicId} in ${categoryId}`
+            })
+            return;
+        }
+        // let concepts = await db.collection('concepts').where('title', '==', payload?.title).get();
+        // const conceptsData = [];
+        // concepts.forEach(doc => {
+        //     conceptsData.push(doc.data())
+        // });
+        // console.log(conceptsData);
+        let docRef = db.collection('concepts').doc(`${topicId}${title}_concept_${categoryId}852471JsPrep`);
+        docRef.update({ 
+           data: data
+        }).then(resp => {
+            res.status(201).json({
+                message: 'Updated Successfully',
+                detail: `${title} updated successfully`
+            })
+            return;
+        }).catch(err => {
+            res.status(400).json({
+                message: 'Update failed',
+                detail: `${title} update failed`
+            })
+            return;
+        })
 }
