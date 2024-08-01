@@ -363,9 +363,9 @@ const handleAddTopicValidation = (topicId, topicName, imageUrl, categoryId) => {
 
 exports.addTopic = async (req, res) => {
     try {
-        const { topicId, topicName, imageUrl, categoryId } = req.body;
+        const { topicId, topicName, imageUrl, categoryId, description, displayOrder } = req.body;
         handleAddTopicValidation(topicId, topicName, imageUrl, categoryId);
-        let topicData = { topicId, topicName, imageUrl }
+        let topicData = { topicId, topicName, imageUrl, description, displayOrder }
         const topicsRef = db.collection('topics');
         const snapshot = await topicsRef.get();
         if (snapshot.empty) {
@@ -402,9 +402,8 @@ exports.addTopic = async (req, res) => {
 
 exports.editTopic = async (req, res) => {
     try {
-        const { topicId, topicName, imageUrl, categoryId } = req.body;
-        handleAddTopicValidation(topicId, topicName, imageUrl, categoryId);
-        let topicData = { topicId, topicName, imageUrl }
+        const { topicId, topicName, imageUrl, categoryId, description, enabled } = req.body;
+        handleAddTopicValidation(topicId, topicName, imageUrl, categoryId, description);
         let topic = await db.collection('topics').where('topicId', '==', topicId).get();
         if (topic.empty) {
             res.status(404).json({
@@ -413,13 +412,14 @@ exports.editTopic = async (req, res) => {
             })
             return;
         }
-        topicData.categoryId = db.doc(`/categories/${categoryId}_cat852471JsPrep`);
         topic.forEach(doc => {
-            doc.ref.update(topicData);
+            let docData = doc.data();
+            let data = { ...docData, topicName: topicName, imageUrl: imageUrl, description: description, enabled: enabled }
+            doc.ref.update(data);
         });
         res.status(201).json({
             success: true,
-            message: `${topicName} Updated Successfully`
+            message: `Updated Successfully`
         })
     } catch (error) {
         handleFailError(res, error);
