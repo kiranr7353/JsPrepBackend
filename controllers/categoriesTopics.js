@@ -117,56 +117,13 @@ exports.getTopicsFromCategories = async (req, res) => {
         topics.forEach(doc => {
             topicsData.push(doc.data());
         });
-        const topicsFromResponse = topicsData?.length > 0 && topicsData?.map(el => ({ topicId: el.topicId, topicName: el.topicName, imageUrl: el.imageUrl, displayOrder: el?.displayOrder, description: el?.description }));
+        const topicsFromResponse = topicsData?.length > 0 && topicsData?.map(el => ({ topicId: el.topicId, topicName: el.topicName, imageUrl: el.imageUrl, displayOrder: el?.displayOrder, description: el?.description, enabled: el?.enabled }));
         res.status(200).json({
             success: true,
             topics: topicsFromResponse
         })
     } catch (error) {
         handleFailError(res, error);
-    }
-}
-
-const handleFileUpload = async (filepath, destination) => {
-    try {
-        const metadata = {
-            metadata: {
-                // This line is very important. It's to create a download token.
-                firebaseStorageDownloadTokens: uuid()
-            },
-            contentType: 'image/png',
-            cacheControl: 'public, max-age=31536000',
-        };
-        await bucket.upload(filepath, {
-            // Support for HTTP requests made with `Accept-Encoding: gzip`
-            gzip: true,
-            metadata: metadata,
-            destination: destination
-        });
-    } catch (error) {
-
-    }
-}
-
-exports.getTest = async (req, res) => {
-    try {
-        const form = formidable({});
-        form.parse(req, async (err, fields, files) => {
-            if (err) {
-                console.log(err);
-                return;
-            }
-            // for (let i = 0; i < files?.image?.length; i++) {
-            //     const filepath = files?.image[i]?.filepath;
-            //     const fileName = files?.image[i]?.newFilename;
-            //     let designation = `JavaScriptInterviewQA/Question1/${fileName}`;
-            //     handleFileUpload(filepath, designation)
-            // }
-            console.log(JSON.parse(fields.answersData))
-            res.json({ fields, files });
-        });
-    } catch (error) {
-        console.log(error);
     }
 }
 
@@ -334,9 +291,8 @@ exports.addCategory = async (req, res) => {
 
 exports.editCategory = async (req, res) => {
     try {
-        const { categoryId, categoryName, enabled, imageUrl } = req.body;
+        const { categoryId, categoryName, enabled, imageUrl, description } = req.body;
         handleAddCategoryValidation(categoryId, categoryName, enabled, imageUrl);
-        const categoryData = { categoryId, categoryName, enabled, imageUrl }
         let category = await db.collection('categories').where('categoryId', '==', categoryId).get();
         if (category.empty) {
             res.status(404).json({
@@ -346,7 +302,9 @@ exports.editCategory = async (req, res) => {
             return;
         }
         category.forEach(doc => {
-            doc.ref.update(categoryData);
+            let docData = doc.data();
+            let catData = { ...docData, categoryName: categoryName, enabled: enabled, imageUrl: imageUrl, description: description };
+            doc.ref.update(catData);
         });
         res.status(201).json({
             success: true,

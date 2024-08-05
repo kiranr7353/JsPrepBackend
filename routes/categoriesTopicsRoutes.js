@@ -10,7 +10,6 @@ router.get("/getCategories", isAuthenticatedUser, getCategories);
 router.get("/getCategoriesFromList/:categoryList", isAuthenticatedUser, getCategoriesFromList);
 router.get("/getTopics/:categoryId", isAuthenticatedUser, getTopicsFromCategories);
 router.get("/getInterviewQA/:topicId", isAuthenticatedUser, getInterviewQuestionsData);
-router.post("/test", isAuthenticatedUser, getTest);
 router.post("/createInterviewQuestions", isAuthenticatedUser, createInterviewQuestions);
 router.post("/updateInterviewQuestion", isAuthenticatedUser, updateInterviewQuestion);
 router.post("/setFavoriteTopic", isAuthenticatedUser , setFavoriteTopic);
