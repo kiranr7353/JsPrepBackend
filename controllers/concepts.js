@@ -19,6 +19,7 @@ exports.getConcepts = async (req, res) => {
         concepts.forEach(doc => {
             conceptsData.push(doc.data());
         });
+        console.log(conceptsData);
         const conceptsFromResponse = conceptsData?.length > 0 && conceptsData?.map(el => ({ id: el.id, data: el.data, title: el.title }));
         res.status(200).json({
             success: true,

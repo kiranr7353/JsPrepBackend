@@ -133,36 +133,21 @@ const handleValidation = (payload) => {
 
 exports.createInterviewQuestions = async (req, res) => {
     try {
-        const { payload, topicId } = req.body;
-        handleValidation(payload);
-        const snapshot = await db.collection('topics').doc(`${topicId + `InterviewQuestion_cat_${topicId}852471JsPrep`}`).get();
-        let questions = await db.collection('interviewQ&A').where('topicId', '==', snapshot.ref).get();
-        if (questions.empty) {
+        const { categoryId, topicId, questionId, question, data } = req.body;
+        let questions = await db.collection('interviewQ&A').where('question', '==', question).get();
+        if (!questions.empty) {
             res.status(404).json({
-                message: 'No data found',
-                detail: `No data found for ${topicId}`
+                message: 'Duplicate Entry',
+                detail: `Dunplicate question found for ${question}`
             })
             return;
         }
-        const questionNumbers = [];
-        const question = [];
-        questions.forEach(doc => {
-            questionNumbers.push(doc.data()?.questionNumber);
-            question.push(doc.data()?.questionTitle);
-        });
-        if (questionNumbers.includes(payload?.questionNumber) || question.includes(payload?.questionTitle)) {
-            res.status(400).json({
-                message: 'Duplicate question number or Duplicate question',
-                detail: `Question already exists. Please try again with different question or different question number`
-            })
-            return;
-        }
-        payload.topicId = db.doc(`/topics/${topicId}InterviewQuestion_cat_${topicId}852471JsPrep`);
-        const docRef = db.collection('interviewQ&A').doc(`${topicId + `question` + payload?.questionNumber}`);
+        const payload = { categoryId: categoryId, topicId: topicId, questionId: questionId, question: question, data: data }
+        const docRef = db.collection('interviewQ&A').doc(questionId);
         await docRef.set(payload);
         res.status(201).json({
             success: true,
-            message: 'Question Added Successfully'
+            message: 'QA Added Successfully'
         })
     } catch (error) {
         handleFailError(res, error);
@@ -205,13 +190,12 @@ exports.updateInterviewQuestion = async (req, res) => {
 
 exports.getInterviewQuestionsData = async (req, res) => {
     try {
-        const { topicId } = req.params;
-        let docref = await db.collection('topics').doc(`${topicId + `InterviewQuestion_cat_${topicId}852471JsPrep`}`).get();
-        let questions = await db.collection('interviewQ&A').where('topicId', '==', docref.ref).get();
+        const { topicId, categoryId } = req.params;
+        let questions = await db.collection('interviewQ&A').where('topicId', '==', topicId).where('categoryId', '==', categoryId).orderBy('createdAt').get();
         if (questions.empty) {
             res.status(404).json({
                 message: 'No data found',
-                detail: `No data found for ${topicId}`
+                detail: `No data found for ${topicId} and ${categoryId}`
             })
             return;
         }
@@ -220,7 +204,7 @@ exports.getInterviewQuestionsData = async (req, res) => {
             console.log(doc.data());
             questionsData.push(doc.data());
         });
-        const questionsFromResponse = questionsData?.length > 0 && questionsData?.map(el => ({ questionNumber: el?.questionNumber, questionTitle: el?.questionTitle, answersData: el?.answersData }));
+        const questionsFromResponse = questionsData?.length > 0 && questionsData?.map(el => ({ question: el?.question, questionId: el?.questionId, data: el?.data }));
         res.status(200).json({
             success: true,
             data: questionsFromResponse
