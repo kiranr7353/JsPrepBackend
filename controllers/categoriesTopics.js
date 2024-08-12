@@ -1,3 +1,4 @@
+const { FieldValue } = require('firebase-admin/firestore');
 const admin = require('../firebaseConfig');
 const { handleFailError } = require('../utils/handleError');
 const db = admin.firestore();
@@ -142,7 +143,7 @@ exports.createInterviewQuestions = async (req, res) => {
             })
             return;
         }
-        const payload = { categoryId: categoryId, topicId: topicId, questionId: questionId, question: question, data: data }
+        const payload = { categoryId: categoryId, topicId: topicId, questionId: questionId, question: question, data: data, enabled: true, createdAt: FieldValue.serverTimestamp() }
         const docRef = db.collection('interviewQ&A').doc(questionId);
         await docRef.set(payload);
         res.status(201).json({
@@ -156,28 +157,19 @@ exports.createInterviewQuestions = async (req, res) => {
 
 exports.updateInterviewQuestion = async (req, res) => {
     try {
-        const { payload, topicId, questionNumber } = req.body;
-        handleValidation(payload);
-        const snapshot = await db.collection('topics').doc(`${topicId + `InterviewQuestion_cat_${topicId}852471JsPrep`}`).get();
-        let questions = await db.collection('interviewQ&A').where('topicId', '==', snapshot.ref).get();
-        if (questions.empty) {
-            res.status(404).json({
-                message: 'No data found',
-                detail: `No data found for ${topicId}`
-            })
-            return;
-        }
-        let question = await db.collection('interviewQ&A').where('topicId', '==', snapshot.ref).where('questionNumber', '==', questionNumber).get();
+        const { questionId, data } = req.body;
+        let question = await db.collection('interviewQ&A').where('questionId', '==', questionId).get();
         if (question.empty) {
             res.status(404).json({
                 message: 'No data found',
-                detail: `No data found for question ${questionNumber}`
+                detail: `No data found for ${questionId}`
             })
             return;
         }
-        payload.topicId = db.doc(`/topics/${topicId}InterviewQuestion_cat_${topicId}852471JsPrep`);
         question.forEach(doc => {
-            doc.ref.update(payload);
+            let docData = doc.data();
+            let updateData = {...docData, data: data}
+            doc.ref.update(updateData);
         });
         res.status(201).json({
             success: true,
@@ -188,10 +180,41 @@ exports.updateInterviewQuestion = async (req, res) => {
     }
 }
 
+exports.deleteInterviewQuestion = async (req, res) => {
+    try {
+        const { questionId } = req.body;
+        let question = await db.collection('interviewQ&A').where('questionId', '==', questionId).get();
+        if (question.empty) {
+            res.status(404).json({
+                message: 'No data found',
+                detail: `No data found for ${questionId}`
+            })
+            return;
+        }
+        const deleteQuery = db.collection('interviewQ&A').where('questionId', '==', questionId);
+        deleteQuery.get().then(querySnapshot => {
+            querySnapshot.forEach(doc => {
+                doc.ref.delete();
+            })
+            res.status(201).json({
+                message: 'Deleted Successfully',
+                detail: `Deleted successfully`
+            })
+        }).catch(err => {
+            res.status(500).json({
+                message: 'Something went wrong. Please try again later',
+                detail: `${err}`
+            })
+        })
+    } catch (error) {
+        handleFailError(res, error);
+    }
+}
+
 exports.getInterviewQuestionsData = async (req, res) => {
     try {
         const { topicId, categoryId } = req.params;
-        let questions = await db.collection('interviewQ&A').where('topicId', '==', topicId).where('categoryId', '==', categoryId).orderBy('createdAt').get();
+        let questions = await db.collection('interviewQ&A').where('topicId', '==', topicId).where('categoryId', '==', categoryId).get();
         if (questions.empty) {
             res.status(404).json({
                 message: 'No data found',
