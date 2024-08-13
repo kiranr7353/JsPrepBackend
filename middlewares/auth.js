@@ -20,7 +20,7 @@ exports.isAuthenticatedUser = async (req, res, next) => {
                     console.log(decodedToken, 'decodedToken');
                     if (decodedToken?.uid) {
                         req.user = decodedToken?.uid
-                        next()
+                        next();
                     }
                 }).catch(async (error) => {
                     console.log(error, 'error1');

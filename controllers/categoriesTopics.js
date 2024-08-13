@@ -157,18 +157,18 @@ exports.createInterviewQuestions = async (req, res) => {
 
 exports.updateInterviewQuestion = async (req, res) => {
     try {
-        const { questionId, data } = req.body;
-        let question = await db.collection('interviewQ&A').where('questionId', '==', questionId).get();
-        if (question.empty) {
+        const { questionId, data, question, enabled } = req.body;
+        let questionRef = await db.collection('interviewQ&A').where('questionId', '==', questionId).get();
+        if (questionRef.empty) {
             res.status(404).json({
                 message: 'No data found',
                 detail: `No data found for ${questionId}`
             })
             return;
         }
-        question.forEach(doc => {
+        questionRef.forEach(doc => {
             let docData = doc.data();
-            let updateData = {...docData, data: data}
+            let updateData = { ...docData, question: question, data: data, enabled: enabled, updatedAt: FieldValue.serverTimestamp() }
             doc.ref.update(updateData);
         });
         res.status(201).json({
@@ -213,8 +213,10 @@ exports.deleteInterviewQuestion = async (req, res) => {
 
 exports.getInterviewQuestionsData = async (req, res) => {
     try {
-        const { topicId, categoryId } = req.params;
-        let questions = await db.collection('interviewQ&A').where('topicId', '==', topicId).where('categoryId', '==', categoryId).get();
+        const { topicId, categoryId, pageSize, pageNumber } = req.body;
+        let questions = await db.collection('interviewQ&A').where('topicId', '==', topicId).where('categoryId', '==', categoryId).orderBy('createdAt').limit(pageSize).offset(pageSize * (pageNumber - 1)).get();
+        let count = await db.collection('interviewQ&A').where('topicId', '==', topicId).where('categoryId', '==', categoryId).count().get();
+        let totalSize = count.data().count;
         if (questions.empty) {
             res.status(404).json({
                 message: 'No data found',
@@ -224,18 +226,123 @@ exports.getInterviewQuestionsData = async (req, res) => {
         }
         const questionsData = [];
         questions.forEach(doc => {
-            console.log(doc.data());
             questionsData.push(doc.data());
         });
-        const questionsFromResponse = questionsData?.length > 0 && questionsData?.map(el => ({ question: el?.question, questionId: el?.questionId, data: el?.data }));
+        const questionsFromResponse = questionsData?.length > 0 && questionsData?.map(el => ({ question: el?.question, questionId: el?.questionId, data: el?.data, enabled: el?.enabled }));
         res.status(200).json({
             success: true,
-            data: questionsFromResponse
+            data: questionsFromResponse,
+            totalCount: totalSize
         })
     } catch (error) {
         handleFailError(res, error);
     }
 }
+
+exports.bookmarkInterviewQuestion = async (req, res) => {
+    try {
+        const { questionId } = req.body;
+        const user = req?.user;
+        let questionRef = await db.collection('interviewQ&A').where('questionId', '==', questionId).get();
+        if (questionRef.empty) {
+            res.status(404).json({
+                message: 'No data found',
+                detail: `No data found for ${questionId}`
+            })
+            return;
+        }
+        questionRef.forEach(doc => {
+            let docData = doc.data();
+            if (docData?.bookmarkedUser && docData?.bookmarkedUser?.length > 0) {
+                const isUserPresent = docData?.bookmarkedUser?.filter(el => el === user);
+                if (isUserPresent) {
+                    res.status(400).json({
+                        success: false,
+                        message: 'Question already bookmarked',
+                        detail: 'Question already bookmarked'
+                    })
+                } else {
+                    let bookmarkUser = [...docData?.bookmarkedUser, user];
+                    let updateData = {...docData, bookmarkedUser: bookmarkUser };
+                    doc.ref.update(updateData);
+                }
+            } else {
+                let bookmarkUser = [user];
+                let updateData = {...docData, bookmarkedUser: bookmarkUser };
+                doc.ref.update(updateData);
+            }
+        });
+        res.status(201).json({
+            success: true,
+            message: 'Bookmarked Successfully'
+        })
+    } catch (error) {
+        handleFailError(res, error);
+    }
+}
+
+exports.removebookmarkedInterviewQuestion = async (req, res) => {
+    try {
+        const { questionId } = req.body;
+        const user = req?.user;
+        let questionRef = await db.collection('interviewQ&A').where('questionId', '==', questionId).get();
+        if (questionRef.empty) {
+            res.status(404).json({
+                message: 'No data found',
+                detail: `No data found for ${questionId}`
+            })
+            return;
+        }
+        questionRef.forEach(doc => {
+            let docData = doc.data();
+            if (docData?.bookmarkedUser && docData?.bookmarkedUser?.length > 0) {
+                let bookmarkedUser = docData?.bookmarkedUser;
+                const bookmarkedItemIndex = docData?.bookmarkedUser?.findIndex(el => el === user);
+                if(bookmarkedItemIndex > -1) {
+                    bookmarkedUser?.splice(bookmarkedItemIndex);
+                }
+                let updatedData = {...docData, bookmarkedUser: bookmarkedUser};
+                doc.ref.update(updatedData);
+            }
+        });
+        res.status(201).json({
+            success: true,
+            message: 'Bookmarked Removed Successfully'
+        })
+    } catch (error) {
+        handleFailError(res, error);
+    }
+}
+
+exports.getBookmarkedInterviewQuestion = async (req, res) => {
+    try {
+        const { topicId, categoryId, pageSize, pageNumber } = req.body;
+        const user = req?.user;
+        let questionRef = await db.collection('interviewQ&A').where('topicId', '==', topicId).where('categoryId', '==', categoryId).where('bookmarkedUser', 'array-contains', user).orderBy('createdAt').limit(pageSize).offset(pageSize * (pageNumber - 1)).get();
+        let count = await db.collection('interviewQ&A').where('topicId', '==', topicId).where('categoryId', '==', categoryId).where('bookmarkedUser', 'array-contains', user).count().get();
+        let totalSize = count.data().count;
+        if (questionRef.empty) {
+            res.status(404).json({
+                message: 'No data found',
+                detail: `No data found`
+            })
+            return;
+        }
+        const questionsData = [];
+        questionRef.forEach(doc => {
+            questionsData.push(doc.data());
+        });
+        const questionsFromResponse = questionsData?.length > 0 && questionsData?.map(el => ({ question: el?.question, questionId: el?.questionId, data: el?.data, enabled: el?.enabled }));
+        res.status(200).json({
+            success: true,
+            data: questionsFromResponse,
+            totalCount: totalSize
+        })
+    } catch (error) {
+        handleFailError(res, error);
+    }
+}
+
 exports.setFavoriteTopic = async (req, res) => {
     try {
         const { topicId } = req.body;
