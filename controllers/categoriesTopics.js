@@ -114,6 +114,8 @@ exports.getTopicsFromCategories = async (req, res) => {
             })
             return;
         }
+        console.log(docref);
+        
         const topicsData = [];
         topics.forEach(doc => {
             topicsData.push(doc.data());
@@ -255,12 +257,15 @@ exports.bookmarkInterviewQuestion = async (req, res) => {
             let docData = doc.data();
             if (docData?.bookmarkedUser && docData?.bookmarkedUser?.length > 0) {
                 const isUserPresent = docData?.bookmarkedUser?.filter(el => el === user);
-                if (isUserPresent) {
+               console.log(isUserPresent);
+                 
+                if (isUserPresent && isUserPresent?.length > 0) {
                     res.status(400).json({
                         success: false,
                         message: 'Question already bookmarked',
                         detail: 'Question already bookmarked'
                     })
+                    return;
                 } else {
                     let bookmarkUser = [...docData?.bookmarkedUser, user];
                     let updateData = {...docData, bookmarkedUser: bookmarkUser };
@@ -437,7 +442,7 @@ exports.addTopic = async (req, res) => {
     try {
         const { topicId, topicName, imageUrl, categoryId, description, displayOrder } = req.body;
         handleAddTopicValidation(topicId, topicName, imageUrl, categoryId);
-        let topicData = { topicId, topicName, imageUrl, description, displayOrder }
+        let topicData = { topicId, topicName, imageUrl, description, displayOrder, enabled: true }
         const topicsRef = db.collection('topics');
         const snapshot = await topicsRef.get();
         if (snapshot.empty) {
