@@ -4,6 +4,7 @@ const { handleFailError } = require('../utils/handleError');
 const db = admin.firestore();
 const { formidable } = require('formidable');
 const uuid = require('uuid-v4');
+const { handleValidations } = require('../utils/handleValidation');
 
 const bucket = admin.storage().bucket();
 
@@ -58,6 +59,14 @@ exports.getCategories = async (req, res) => {
 exports.getCategoriesFromList = async (req, res) => {
     try {
         const { categoryList } = req.params;
+        let errorObj = handleValidations(res, [ {'categoryList': categoryList} ]);
+        if(Object.keys(errorObj).length > 0) {
+            res.status(400).json({
+                message: errorObj?.message,
+                detail: errorObj?.detail
+            })
+            return;
+        }
         if (categoryList && categoryList !== 'all') {
             let docref = await db.collection('categoryList').doc(`${categoryList + '_category_852471JsPrep'}`).get();
             let categoriesRef = await db.collection('categories').where('categoryList', '==', docref.ref).get();
@@ -105,6 +114,14 @@ exports.getCategoriesFromList = async (req, res) => {
 exports.getTopicsFromCategories = async (req, res) => {
     try {
         const { categoryId } = req.params;
+        let errorObj = handleValidations(res, [ {'categoryId': categoryId} ]);
+        if(Object.keys(errorObj).length > 0) {
+            res.status(400).json({
+                message: errorObj?.message,
+                detail: errorObj?.detail
+            })
+            return;
+        }
         let docref = await db.collection('categories').doc(`${categoryId + '_cat852471JsPrep'}`).get();
         let topics = await db.collection('topics').where('categoryId', '==', docref.ref).get();
         if (topics.empty) {
@@ -114,8 +131,6 @@ exports.getTopicsFromCategories = async (req, res) => {
             })
             return;
         }
-        console.log(docref);
-        
         const topicsData = [];
         topics.forEach(doc => {
             topicsData.push(doc.data());
@@ -130,13 +145,17 @@ exports.getTopicsFromCategories = async (req, res) => {
     }
 }
 
-const handleValidation = (payload) => {
-
-}
-
 exports.createInterviewQuestions = async (req, res) => {
     try {
         const { categoryId, topicId, questionId, question, data } = req.body;
+        let errorObj = handleValidations(res, [ {'questionId': questionId}, {'data': data}, {'question': question}, {'categoryId': categoryId}, {'topicId': topicId} ]);
+        if(Object.keys(errorObj).length > 0) {
+            res.status(400).json({
+                message: errorObj?.message,
+                detail: errorObj?.detail
+            })
+            return;
+        }
         let questions = await db.collection('interviewQ&A').where('question', '==', question).get();
         if (!questions.empty) {
             res.status(404).json({
@@ -160,6 +179,14 @@ exports.createInterviewQuestions = async (req, res) => {
 exports.updateInterviewQuestion = async (req, res) => {
     try {
         const { questionId, data, question, enabled } = req.body;
+        let errorObj = handleValidations(res, [ {'questionId': questionId}, {'data': data}, {'question': question}, {'enabled': enabled} ]);
+        if(Object.keys(errorObj).length > 0) {
+            res.status(400).json({
+                message: errorObj?.message,
+                detail: errorObj?.detail
+            })
+            return;
+        }
         let questionRef = await db.collection('interviewQ&A').where('questionId', '==', questionId).get();
         if (questionRef.empty) {
             res.status(404).json({
@@ -185,6 +212,14 @@ exports.updateInterviewQuestion = async (req, res) => {
 exports.deleteInterviewQuestion = async (req, res) => {
     try {
         const { questionId } = req.body;
+        let errorObj = handleValidations(res, [ {'questionId': questionId} ]);
+        if(Object.keys(errorObj).length > 0) {
+            res.status(400).json({
+                message: errorObj?.message,
+                detail: errorObj?.detail
+            })
+            return;
+        }
         let question = await db.collection('interviewQ&A').where('questionId', '==', questionId).get();
         if (question.empty) {
             res.status(404).json({
@@ -216,6 +251,14 @@ exports.deleteInterviewQuestion = async (req, res) => {
 exports.getInterviewQuestionsData = async (req, res) => {
     try {
         const { topicId, categoryId, pageSize, pageNumber } = req.body;
+        let errorObj = handleValidations(res, [ {'topicId': topicId}, {'categoryId': categoryId}, {'pageSize': pageSize}, {'pageNumber': pageNumber} ]);
+        if(Object.keys(errorObj).length > 0) {
+            res.status(400).json({
+                message: errorObj?.message,
+                detail: errorObj?.detail
+            })
+            return;
+        }
         let questions = await db.collection('interviewQ&A').where('topicId', '==', topicId).where('categoryId', '==', categoryId).orderBy('createdAt').limit(pageSize).offset(pageSize * (pageNumber - 1)).get();
         let count = await db.collection('interviewQ&A').where('topicId', '==', topicId).where('categoryId', '==', categoryId).count().get();
         let totalSize = count.data().count;
@@ -245,6 +288,14 @@ exports.bookmarkInterviewQuestion = async (req, res) => {
     try {
         const { questionId } = req.body;
         const user = req?.user;
+        let errorObj = handleValidations(res, [ {'questionId': questionId} ]);
+        if(Object.keys(errorObj).length > 0) {
+            res.status(400).json({
+                message: errorObj?.message,
+                detail: errorObj?.detail
+            })
+            return;
+        }
         let questionRef = await db.collection('interviewQ&A').where('questionId', '==', questionId).get();
         if (questionRef.empty) {
             res.status(404).json({
@@ -290,6 +341,14 @@ exports.removebookmarkedInterviewQuestion = async (req, res) => {
     try {
         const { questionId } = req.body;
         const user = req?.user;
+        let errorObj = handleValidations(res, [ {'questionId': questionId} ]);
+        if(Object.keys(errorObj).length > 0) {
+            res.status(400).json({
+                message: errorObj?.message,
+                detail: errorObj?.detail
+            })
+            return;
+        }
         let questionRef = await db.collection('interviewQ&A').where('questionId', '==', questionId).get();
         if (questionRef.empty) {
             res.status(404).json({
@@ -322,6 +381,14 @@ exports.removebookmarkedInterviewQuestion = async (req, res) => {
 exports.getBookmarkedInterviewQuestion = async (req, res) => {
     try {
         const { topicId, categoryId, pageSize, pageNumber } = req.body;
+        let errorObj = handleValidations(res, [ {'topicId': topicId}, {'categoryId': categoryId}, {'pageSize': pageSize}, {'pageNumber': pageNumber} ]);
+        if(Object.keys(errorObj).length > 0) {
+            res.status(400).json({
+                message: errorObj?.message,
+                detail: errorObj?.detail
+            })
+            return;
+        }
         const user = req?.user;
         let questionRef = await db.collection('interviewQ&A').where('topicId', '==', topicId).where('categoryId', '==', categoryId).where('bookmarkedUser', 'array-contains', user).orderBy('createdAt').limit(pageSize).offset(pageSize * (pageNumber - 1)).get();
         let count = await db.collection('interviewQ&A').where('topicId', '==', topicId).where('categoryId', '==', categoryId).where('bookmarkedUser', 'array-contains', user).count().get();
