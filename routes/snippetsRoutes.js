@@ -4,12 +4,12 @@ const { addSnippets, updateSnippet, deleteSnippet, getSnippetsData, bookmarkSnip
 
 const router = express.Router();
 
-router.post("/addSnippets", isAuthenticatedUser, addSnippets);
-router.post("/getSnippetsData", isAuthenticatedUser, getSnippetsData);
+router.post("/addSnippet", isAuthenticatedUser, addSnippets);
+router.post("/getSnippets", isAuthenticatedUser, getSnippetsData);
 router.post("/updateSnippet", isAuthenticatedUser, updateSnippet);
 router.post("/deleteSnippet", isAuthenticatedUser, deleteSnippet);
 router.post("/bookmarkSnippet", isAuthenticatedUser, bookmarkSnippet);
 router.post("/removeBookmark", isAuthenticatedUser, removebookmarkedSnippet);
-router.post("/getBookmarkedQA", isAuthenticatedUser, getBookmarkedSnippet)
+router.post("/getBookmarkedSnippet", isAuthenticatedUser, getBookmarkedSnippet)
 
 module.exports = router;
