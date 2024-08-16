@@ -1,5 +1,4 @@
 const express = require('express');
-// const { initializeApp, cert } = require('firebase-admin/app')
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
@@ -10,6 +9,7 @@ const app = express();
 const userRoutes = require('./routes/userRoutes');
 const categoryRoutes = require('./routes/categoriesTopicsRoutes');
 const conceptRoutes = require('./routes/conceptsRoutes');
+const snippetsRoutes = require('./routes/snippetsRoutes');
 
 dotenv.config();
 
@@ -24,9 +24,10 @@ app.use(express.urlencoded({extended: true}))
 app.use('/api/v1/user', userRoutes);
 app.use('/api/v1/categories', categoryRoutes);
 app.use('/api/v1/concepts', conceptRoutes);
+app.use('/api/v1/snippets', snippetsRoutes);
 
 app.get("/", (req, res) => {
-    return res.status(200).send("<h1>Hello sdfdsfsdd sdsdfds</h1>")
+    return res.status(200).send("<h1>Looks good!!</h1>")
 })
 
 const PORT = process.env.PORT || 8082;
