@@ -1,11 +1,20 @@
 const admin = require('../firebaseConfig');
 const { handleFailError } = require('../utils/handleError');
+const { handleValidations } = require('../utils/handleValidation');
 const db = admin.firestore();
 
 
 exports.getConcepts = async (req, res) => {
     try {
         const { topicId, categoryId } = req.params;
+        let errorObj = handleValidations(res, [{ 'topicId': topicId }, { 'categoryId': categoryId }]);
+        if (Object.keys(errorObj).length > 0) {
+            res.status(400).json({
+                message: errorObj?.message,
+                detail: errorObj?.detail
+            })
+            return;
+        }
         let docref = await db.collection('topics').doc(`${topicId + `_cat_${categoryId}852471JsPrep`}`).get();
         let concepts = await db.collection('concepts').where('topicId', '==', docref.ref).get();
         if (concepts.empty) {
@@ -19,7 +28,6 @@ exports.getConcepts = async (req, res) => {
         concepts.forEach(doc => {
             conceptsData.push(doc.data());
         });
-        console.log(conceptsData);
         const conceptsFromResponse = conceptsData?.length > 0 && conceptsData?.map(el => ({ id: el.id, data: el.data, title: el.title }));
         res.status(200).json({
             success: true,
@@ -33,6 +41,14 @@ exports.getConcepts = async (req, res) => {
 exports.addConcepts = async (req, res) => {
     try {
         const { categoryId, topicId, id, title, data } = req.body;
+        let errorObj = handleValidations(res, [{ 'topicId': topicId }, { 'categoryId': categoryId }, { 'id': id }, { 'title': title }, { 'data': data }]);
+        if (Object.keys(errorObj).length > 0) {
+            res.status(400).json({
+                message: errorObj?.message,
+                detail: errorObj?.detail
+            })
+            return;
+        }
         let payload = { categoryId, topicId, id, title, data };
         let snap = await db.collection('topics').doc(`${payload.topicId + `_cat_${payload.categoryId}852471JsPrep`}`).get();
         if (!snap.exists) {
@@ -55,7 +71,6 @@ exports.addConcepts = async (req, res) => {
         });
         const conceptsFromResponse = conceptsData?.length > 0 && conceptsData?.map(el => ({ id: el.id, description: el.description, title: el.title, imageUrl: el.imageUrl, points: el.points, tableData: el.tableData, hasPoints: el.hasPoints, hasTable: el.hasTable, columnHeader: el.columnHeader }));
         for (let i = 0; i < conceptsFromResponse.length; i++) {
-            console.log(conceptsFromResponse[i].title === payload.title);
             if (conceptsFromResponse[i].title === payload.title) {
                 res.status(400).json({
                     message: 'Duplicate Concept',
@@ -79,7 +94,14 @@ exports.addConcepts = async (req, res) => {
 exports.editConcept = async (req, res) => {
     try {
         const { currentTitle, changedTitle, topicId, categoryId } = req.body;
-        console.log(req.body);
+        let errorObj = handleValidations(res, [{ 'topicId': topicId }, { 'categoryId': categoryId }, { 'currentTitle': currentTitle }, { 'changedTitle': changedTitle }]);
+        if (Object.keys(errorObj).length > 0) {
+            res.status(400).json({
+                message: errorObj?.message,
+                detail: errorObj?.detail
+            })
+            return;
+        }
         let snap = await db.collection('topics').doc(`${topicId + `_cat_${categoryId}852471JsPrep`}`).get();
         if (!snap.exists) {
             res.status(404).json({
@@ -125,10 +147,11 @@ exports.editConcept = async (req, res) => {
 
 exports.deleteConcept = async (req, res) => {
     const { topicId, categoryId, title } = req.body;
-    if (!title) {
+    let errorObj = handleValidations(res, [{ 'topicId': topicId }, { 'categoryId': categoryId }, { 'title': title }]);
+    if (Object.keys(errorObj).length > 0) {
         res.status(400).json({
-            message: 'Insufficient Data',
-            detail: `Title is missing`
+            message: errorObj?.message,
+            detail: errorObj?.detail
         })
         return;
     }
@@ -164,7 +187,7 @@ exports.deleteConcept = async (req, res) => {
 }
 
 exports.editDescriptionInSection = async (req, res) => {
-    const { categoryId, data, sectionId, topicId, title } = req.body;
+    const { categoryId, data, topicId, title } = req.body;
     let snap = await db.collection('topics').doc(`${topicId + `_cat_${categoryId}852471JsPrep`}`).get();
     if (!snap.exists) {
         res.status(404).json({

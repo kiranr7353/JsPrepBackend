@@ -16,8 +16,7 @@ router.post("/deleteInterviewQuestion", isAuthenticatedUser, deleteInterviewQues
 router.post("/bookmarkInterviewQuestion", isAuthenticatedUser, bookmarkInterviewQuestion);
 router.post("/removeBookmark", isAuthenticatedUser, removebookmarkedInterviewQuestion);
 router.post("/getBookmarkedQA", isAuthenticatedUser, getBookmarkedInterviewQuestion);
-router.post("/setFavoriteTopic", isAuthenticatedUser , setFavoriteTopic);
-router.post("/setFavoriteQuestion", isAuthenticatedUser,  setFavoriteQuestion);
+// router.post("/setFavoriteTopic", isAuthenticatedUser , setFavoriteTopic);
 router.post("/addCategory", isAuthenticatedUser,  addCategory);
 router.post("/editCategory", isAuthenticatedUser,  editCategory);
 router.post("/addTopic", isAuthenticatedUser,  addTopic);

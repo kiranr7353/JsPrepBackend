@@ -1,14 +1,15 @@
 const express = require('express');
 const { getConcepts, addConcepts, editDescriptionInSection, deleteConcept, editConcept } = require('../controllers/concepts');
+const { isAuthenticatedUser } = require('../middlewares/auth');
 
 
 const router = express.Router();
 
-router.post("/addConcepts", addConcepts);
-router.post("/deleteConcept", deleteConcept);
-router.post("/editConcept", editConcept);
-router.get("/getConcepts/:topicId/:categoryId", getConcepts);
-router.post("/section/editDescription", editDescriptionInSection);
+router.post("/addConcepts", isAuthenticatedUser, addConcepts);
+router.post("/deleteConcept", isAuthenticatedUser, deleteConcept);
+router.post("/editConcept", isAuthenticatedUser, editConcept);
+router.get("/getConcepts/:topicId/:categoryId", isAuthenticatedUser, getConcepts);
+router.post("/section/editDescription", isAuthenticatedUser, editDescriptionInSection);
 
 
 

@@ -308,8 +308,6 @@ exports.bookmarkInterviewQuestion = async (req, res) => {
             let docData = doc.data();
             if (docData?.bookmarkedUser && docData?.bookmarkedUser?.length > 0) {
                 const isUserPresent = docData?.bookmarkedUser?.filter(el => el === user);
-               console.log(isUserPresent);
-                 
                 if (isUserPresent && isUserPresent?.length > 0) {
                     res.status(400).json({
                         success: false,
@@ -424,23 +422,17 @@ exports.setFavoriteTopic = async (req, res) => {
     }
 }
 
-exports.setFavoriteQuestion = async (req, res) => {
-    try {
-        const { questionNumber } = req.body;
-
-    } catch (error) {
-        handleFailError(res, error);
-    }
-}
-
-const handleAddCategoryValidation = (categoryId, categoryName, enabled, imageUrl) => {
-
-}
-
 exports.addCategory = async (req, res) => {
     try {
         const { categoryId, categoryName, enabled, imageUrl } = req.body;
-        handleAddCategoryValidation(categoryId, categoryName, enabled, imageUrl);
+        let errorObj = handleValidations(res, [ {'categoryName': categoryName}, {'categoryId': categoryId}, {'enabled': enabled}, {'imageUrl': imageUrl} ]);
+        if(Object.keys(errorObj).length > 0) {
+            res.status(400).json({
+                message: errorObj?.message,
+                detail: errorObj?.detail
+            })
+            return;
+        }
         const categoryData = { categoryId, categoryName, enabled, imageUrl }
         const categoryRef = db.collection('categories');
         const snapshot = await categoryRef.get();
@@ -478,7 +470,14 @@ exports.addCategory = async (req, res) => {
 exports.editCategory = async (req, res) => {
     try {
         const { categoryId, categoryName, enabled, imageUrl, description } = req.body;
-        handleAddCategoryValidation(categoryId, categoryName, enabled, imageUrl);
+        let errorObj = handleValidations(res, [ {'categoryName': categoryName}, {'categoryId': categoryId}, {'enabled': enabled}, {'imageUrl': imageUrl}, {'description': description} ]);
+        if(Object.keys(errorObj).length > 0) {
+            res.status(400).json({
+                message: errorObj?.message,
+                detail: errorObj?.detail
+            })
+            return;
+        }
         let category = await db.collection('categories').where('categoryId', '==', categoryId).get();
         if (category.empty) {
             res.status(404).json({
@@ -501,14 +500,17 @@ exports.editCategory = async (req, res) => {
     }
 }
 
-const handleAddTopicValidation = (topicId, topicName, imageUrl, categoryId) => {
-
-}
-
 exports.addTopic = async (req, res) => {
     try {
         const { topicId, topicName, imageUrl, categoryId, description, displayOrder } = req.body;
-        handleAddTopicValidation(topicId, topicName, imageUrl, categoryId);
+        let errorObj = handleValidations(res, [ {'topicId': topicId}, {'categoryId': categoryId}, {'topicName': topicName}, {'imageUrl': imageUrl}, {'description': description}, { 'displayOrder': displayOrder } ]);
+        if(Object.keys(errorObj).length > 0) {
+            res.status(400).json({
+                message: errorObj?.message,
+                detail: errorObj?.detail
+            })
+            return;
+        }
         let topicData = { topicId, topicName, imageUrl, description, displayOrder, enabled: true }
         const topicsRef = db.collection('topics');
         const snapshot = await topicsRef.get();
@@ -547,7 +549,14 @@ exports.addTopic = async (req, res) => {
 exports.editTopic = async (req, res) => {
     try {
         const { topicId, topicName, imageUrl, categoryId, description, enabled } = req.body;
-        handleAddTopicValidation(topicId, topicName, imageUrl, categoryId, description);
+        let errorObj = handleValidations(res, [ {'topicId': topicId}, {'categoryId': categoryId}, {'topicName': topicName}, {'imageUrl': imageUrl}, {'description': description}, { 'enabled': enabled } ]);
+        if(Object.keys(errorObj).length > 0) {
+            res.status(400).json({
+                message: errorObj?.message,
+                detail: errorObj?.detail
+            })
+            return;
+        }
         let topic = await db.collection('topics').where('topicId', '==', topicId).get();
         if (topic.empty) {
             res.status(404).json({
@@ -573,6 +582,14 @@ exports.editTopic = async (req, res) => {
 exports.deleteTopic = async (req, res) => {
     try {
         const { topicId, topicName, categoryId } = req.body;
+        let errorObj = handleValidations(res, [ {'topicId': topicId}, {'categoryId': categoryId}, {'topicName': topicName} ]);
+        if(Object.keys(errorObj).length > 0) {
+            res.status(400).json({
+                message: errorObj?.message,
+                detail: errorObj?.detail
+            })
+            return;
+        }
         let topic = await db.collection('topics').where('topicId', '==', topicId).get();
         if (topic.empty) {
             res.status(404).json({

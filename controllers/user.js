@@ -157,7 +157,6 @@ exports.deleteUser = async(req, res) => {
     try {
         const batch = db.batch();
         const { userId } = req.params;
-        console.log(userId);
         const userRef = db.collection('users');
         const snapshot = await userRef.where('uid', '==', userId).get();
         if (snapshot.empty) {
