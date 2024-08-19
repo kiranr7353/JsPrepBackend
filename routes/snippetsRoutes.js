@@ -10,6 +10,6 @@ router.post("/updateSnippet", isAuthenticatedUser, updateSnippet);
 router.post("/deleteSnippet", isAuthenticatedUser, deleteSnippet);
 router.post("/bookmarkSnippet", isAuthenticatedUser, bookmarkSnippet);
 router.post("/removeBookmark", isAuthenticatedUser, removebookmarkedSnippet);
-router.post("/getBookmarkedSnippet", isAuthenticatedUser, getBookmarkedSnippet)
+router.post("/getBookmarkedSnippet", isAuthenticatedUser, getBookmarkedSnippet);
 
 module.exports = router;

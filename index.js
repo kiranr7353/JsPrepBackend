@@ -10,6 +10,7 @@ const userRoutes = require('./routes/userRoutes');
 const categoryRoutes = require('./routes/categoriesTopicsRoutes');
 const conceptRoutes = require('./routes/conceptsRoutes');
 const snippetsRoutes = require('./routes/snippetsRoutes');
+const programmingRoutes = require('./routes/programmingRoutes');
 
 dotenv.config();
 
@@ -25,6 +26,7 @@ app.use('/api/v1/user', userRoutes);
 app.use('/api/v1/categories', categoryRoutes);
 app.use('/api/v1/concepts', conceptRoutes);
 app.use('/api/v1/snippets', snippetsRoutes);
+app.use('/api/v1/programmingQA', programmingRoutes);
 
 app.get("/", (req, res) => {
     return res.status(200).send("<h1>Looks good!!</h1>")
