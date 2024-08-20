@@ -16,7 +16,7 @@ exports.addProgrammingQA = async (req, res) => {
             })
             return;
         }
-        let titleRef = await db.collection('snippets').where('title', '==', title).get();
+        let titleRef = await db.collection('programmingQA').where('title', '==', title).get();
         if (!titleRef.empty) {
             res.status(404).json({
                 message: 'Duplicate Entry',
@@ -25,11 +25,11 @@ exports.addProgrammingQA = async (req, res) => {
             return;
         }
         const payload = { categoryId: categoryId, topicId: topicId, titleId: titleId, title: title, data: data, enabled: true, createdAt: FieldValue.serverTimestamp() }
-        const docRef = db.collection('snippets').doc(titleId);
+        const docRef = db.collection('programmingQA').doc(titleId);
         await docRef.set(payload);
         res.status(201).json({
             success: true,
-            message: 'Snippet Added Successfully'
+            message: 'Programming QA Added Successfully'
         })
     } catch (error) {
         handleFailError(res, error);
@@ -47,7 +47,7 @@ exports.updateProgrammingQA = async (req, res) => {
             })
             return;
         }
-        let titleRef = await db.collection('snippets').where('titleId', '==', titleId).get();
+        let titleRef = await db.collection('programmingQA').where('titleId', '==', titleId).get();
         if (titleRef.empty) {
             res.status(404).json({
                 message: 'No data found',
@@ -80,7 +80,7 @@ exports.deleteProgrammingQA = async (req, res) => {
             })
             return;
         }
-        let titleRef = await db.collection('snippets').where('titleId', '==', titleId).get();
+        let titleRef = await db.collection('programmingQA').where('titleId', '==', titleId).get();
         if (titleRef.empty) {
             res.status(404).json({
                 message: 'No data found',
@@ -88,7 +88,7 @@ exports.deleteProgrammingQA = async (req, res) => {
             })
             return;
         }
-        const deleteQuery = db.collection('snippets').where('titleId', '==', titleId);
+        const deleteQuery = db.collection('programmingQA').where('titleId', '==', titleId);
         deleteQuery.get().then(querySnapshot => {
             querySnapshot.forEach(doc => {
                 doc.ref.delete();
@@ -119,8 +119,8 @@ exports.getProgrammingQAData = async (req, res) => {
             })
             return;
         }
-        let titlRef = await db.collection('snippets').where('topicId', '==', topicId).where('categoryId', '==', categoryId).orderBy('createdAt').limit(pageSize).offset(pageSize * (pageNumber - 1)).get();
-        let count = await db.collection('snippets').where('topicId', '==', topicId).where('categoryId', '==', categoryId).count().get();
+        let titlRef = await db.collection('programmingQA').where('topicId', '==', topicId).where('categoryId', '==', categoryId).orderBy('createdAt').limit(pageSize).offset(pageSize * (pageNumber - 1)).get();
+        let count = await db.collection('programmingQA').where('topicId', '==', topicId).where('categoryId', '==', categoryId).count().get();
         let totalSize = count.data().count;
         if (titlRef.empty) {
             res.status(404).json({
@@ -156,7 +156,7 @@ exports.bookmarkProgrammingQA = async (req, res) => {
             })
             return;
         }
-        let titleRef = await db.collection('snippets').where('titleId', '==', titleId).get();
+        let titleRef = await db.collection('programmingQA').where('titleId', '==', titleId).get();
         if (titleRef.empty) {
             res.status(404).json({
                 message: 'No data found',
@@ -171,8 +171,8 @@ exports.bookmarkProgrammingQA = async (req, res) => {
                 if (isUserPresent && isUserPresent?.length > 0) {
                     res.status(400).json({
                         success: false,
-                        message: 'Snippet already bookmarked',
-                        detail: 'Snippet already bookmarked'
+                        message: 'Programming QA already bookmarked',
+                        detail: 'Programming QA already bookmarked'
                     })
                     return;
                 } else {
@@ -207,7 +207,7 @@ exports.removebookmarkedProgrammingQA = async (req, res) => {
             })
             return;
         }
-        let titleRef = await db.collection('snippets').where('titleId', '==', titleId).get();
+        let titleRef = await db.collection('programmingQA').where('titleId', '==', titleId).get();
         if (titleRef.empty) {
             res.status(404).json({
                 message: 'No data found',
@@ -248,8 +248,8 @@ exports.getBookmarkedProgrammingQA = async (req, res) => {
             return;
         }
         const user = req?.user;
-        let titleRef = await db.collection('snippets').where('topicId', '==', topicId).where('categoryId', '==', categoryId).where('bookmarkedUser', 'array-contains', user).orderBy('createdAt').limit(pageSize).offset(pageSize * (pageNumber - 1)).get();
-        let count = await db.collection('snippets').where('topicId', '==', topicId).where('categoryId', '==', categoryId).where('bookmarkedUser', 'array-contains', user).count().get();
+        let titleRef = await db.collection('programmingQA').where('topicId', '==', topicId).where('categoryId', '==', categoryId).where('bookmarkedUser', 'array-contains', user).orderBy('createdAt').limit(pageSize).offset(pageSize * (pageNumber - 1)).get();
+        let count = await db.collection('programmingQA').where('topicId', '==', topicId).where('categoryId', '==', categoryId).where('bookmarkedUser', 'array-contains', user).count().get();
         let totalSize = count.data().count;
         if (titleRef.empty) {
             res.status(404).json({

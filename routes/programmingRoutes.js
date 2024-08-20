@@ -10,7 +10,7 @@ router.post("/updateProgrammingQA", isAuthenticatedUser, updateProgrammingQA);
 router.post("/deleteProgrammingQA", isAuthenticatedUser, deleteProgrammingQA);
 router.post("/bookmarkProgrammingQA", isAuthenticatedUser, bookmarkProgrammingQA);
 router.post("/removeBookmark", isAuthenticatedUser, removebookmarkedProgrammingQA);
-router.post("/getBookmarkedSnippet", isAuthenticatedUser, getBookmarkedProgrammingQA);
+router.post("/getBookmarkedPQA", isAuthenticatedUser, getBookmarkedProgrammingQA);
 
 
 module.exports = router;
