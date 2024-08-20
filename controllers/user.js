@@ -120,6 +120,31 @@ exports.getUserDetails = async (req, res) => {
     }
 }
 
+exports.getFavoriteTopics = async (req, res) => {
+    try {
+        const user = req?.user;
+        const userRef = db.collection('users');
+        const snapshot = await userRef.where('uid', '==', user).get();
+        if (snapshot.empty) {
+            res.status(404).json({
+                message: 'No user found',
+                detail: "No user found for the given id"
+            })
+            return;
+        }
+        let favoriteTopics = []; 
+        snapshot.forEach(doc => {
+            favoriteTopics = doc.data()?.favoriteTopics;
+        });
+        res.status(200).json({
+            success: true,
+            favoriteTopics
+        })
+    } catch (error) {
+        handleFailError(res, error);
+    }
+}
+
 exports.updateUserDetails = async(req, res) => {
     try {
         const batch = db.batch();

@@ -415,8 +415,75 @@ exports.getBookmarkedInterviewQuestion = async (req, res) => {
 
 exports.setFavoriteTopic = async (req, res) => {
     try {
-        const { topicId } = req.body;
+        const { topicDetails } = req.body;
+        const user = req?.user;
+        const usersRef = db.collection('users');
+        const snapshot = await usersRef.where('uid', '==', user).get();
+        if (snapshot.empty) {
+            res.status(404).json({
+                message: 'User not found',
+                detail: "User not found"
+            })
+            return;
+        }
+        snapshot.forEach((doc) => {
+            const userData = doc.data();
+            if (userData?.favoriteTopics && userData?.favoriteTopics?.length > 0) {
+                const favTopicIndex = userData?.favoriteTopics?.findIndex(el => el?.topicId === topicDetails?.topicId);
+                if (favTopicIndex > -1) {
+                    res.status(400).json({
+                        message: 'Duplicate Record',
+                        detail: "Topic already set as favorite"
+                    })
+                    return;
+                }
+                let updatedFavTopics = [...userData?.favoriteTopics, topicDetails];
+                let updatedData = { ...userData, favoriteTopics: updatedFavTopics };
+                doc.ref.update(updatedData);
+            } else {
+                let favoriteTopics = [topicDetails];
+                let updateData = { ...userData, favoriteTopics: favoriteTopics };
+                doc.ref.update(updateData);
+            }
+            res.status(201).json({
+                success: true,
+                message: `${topicDetails?.topicName} favorite set successfully`
+            })
+        });
+    } catch (error) {
+        handleFailError(res, error);
+    }
+}
 
+exports.removeFavoriteTopic = async (req, res) => {
+    try {
+        const { topicDetails } = req.body;
+        const user = req?.user;
+        const usersRef = db.collection('users');
+        const snapshot = await usersRef.where('uid', '==', user).get();
+        if (snapshot.empty) {
+            res.status(404).json({
+                message: 'User not found',
+                detail: "User not found"
+            })
+            return;
+        }
+        snapshot.forEach((doc) => {
+            const userData = doc.data();
+            if (userData?.favoriteTopics && userData?.favoriteTopics?.length > 0) {
+                const favTopicIndex = userData?.favoriteTopics?.findIndex(el => el?.topicId === topicDetails?.topicId);
+                let favTopics = userData?.favoriteTopics;
+                if (favTopicIndex > -1) {
+                    favTopics?.splice(favTopicIndex);
+                }
+                let updatedData = {...userData, favoriteTopics: favTopics};
+                doc.ref.update(updatedData);
+            }
+            res.status(201).json({
+                success: true,
+                message: `${topicDetails?.topicName} favorite removed`
+            })
+        });
     } catch (error) {
         handleFailError(res, error);
     }

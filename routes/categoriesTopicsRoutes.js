@@ -1,5 +1,5 @@
 const express = require('express');
-const { getCategories, getTopicsFromCategories, getInterviewQuestionsData, createInterviewQuestions, updateInterviewQuestion, setFavoriteTopic, setFavoriteQuestion, addCategory, addTopic, editCategory, editTopic, deleteTopic, getCategoriesList, getCategoriesFromList, deleteInterviewQuestion, bookmarkInterviewQuestion, getBookmarkedInterviewQuestion, removebookmarkedInterviewQuestion } = require('../controllers/categoriesTopics');
+const { getCategories, getTopicsFromCategories, getInterviewQuestionsData, createInterviewQuestions, updateInterviewQuestion, setFavoriteTopic, addCategory, addTopic, editCategory, editTopic, deleteTopic, getCategoriesList, getCategoriesFromList, deleteInterviewQuestion, bookmarkInterviewQuestion, getBookmarkedInterviewQuestion, removebookmarkedInterviewQuestion, removeFavoriteTopic } = require('../controllers/categoriesTopics');
 const { isAuthenticatedUser } = require('../middlewares/auth');
 
 
@@ -16,7 +16,8 @@ router.post("/deleteInterviewQuestion", isAuthenticatedUser, deleteInterviewQues
 router.post("/bookmarkInterviewQuestion", isAuthenticatedUser, bookmarkInterviewQuestion);
 router.post("/removeBookmark", isAuthenticatedUser, removebookmarkedInterviewQuestion);
 router.post("/getBookmarkedQA", isAuthenticatedUser, getBookmarkedInterviewQuestion);
-// router.post("/setFavoriteTopic", isAuthenticatedUser , setFavoriteTopic);
+router.post("/setFavoriteTopic", isAuthenticatedUser , setFavoriteTopic);
+router.post("/removeFavoriteTopic", isAuthenticatedUser , removeFavoriteTopic);
 router.post("/addCategory", isAuthenticatedUser,  addCategory);
 router.post("/editCategory", isAuthenticatedUser,  editCategory);
 router.post("/addTopic", isAuthenticatedUser,  addTopic);
