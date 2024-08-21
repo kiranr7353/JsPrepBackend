@@ -124,6 +124,7 @@ exports.getTopicsFromCategories = async (req, res) => {
         }
         let docref = await db.collection('categories').doc(`${categoryId + '_cat852471JsPrep'}`).get();
         let topics = await db.collection('topics').where('categoryId', '==', docref.ref).get();
+        // let topics = await db.collection('topics').where('searchTerm', 'array-contains', 'javascript').get();
         if (topics.empty) {
             res.status(404).json({
                 message: 'No topics found',
@@ -135,7 +136,7 @@ exports.getTopicsFromCategories = async (req, res) => {
         topics.forEach(doc => {
             topicsData.push(doc.data());
         });
-        const topicsFromResponse = topicsData?.length > 0 && topicsData?.map(el => ({ topicId: el.topicId, topicName: el.topicName, imageUrl: el.imageUrl, displayOrder: el?.displayOrder, description: el?.description, enabled: el?.enabled }));
+        const topicsFromResponse = topicsData?.length > 0 && topicsData?.map(el => ({ topicId: el.topicId, topicName: el.topicName, imageUrl: el.imageUrl, displayOrder: el?.displayOrder, description: el?.description, enabled: el?.enabled, topicCategoryId: el?.topicCategoryId }));
         res.status(200).json({
             success: true,
             topics: topicsFromResponse
@@ -361,7 +362,7 @@ exports.removebookmarkedInterviewQuestion = async (req, res) => {
                 let bookmarkedUser = docData?.bookmarkedUser;
                 const bookmarkedItemIndex = docData?.bookmarkedUser?.findIndex(el => el === user);
                 if(bookmarkedItemIndex > -1) {
-                    bookmarkedUser?.splice(bookmarkedItemIndex);
+                    bookmarkedUser?.splice(bookmarkedItemIndex, 1);
                 }
                 let updatedData = {...docData, bookmarkedUser: bookmarkedUser};
                 doc.ref.update(updatedData);
@@ -416,6 +417,14 @@ exports.getBookmarkedInterviewQuestion = async (req, res) => {
 exports.setFavoriteTopic = async (req, res) => {
     try {
         const { topicDetails } = req.body;
+        let errorObj = handleValidations(res, [ {'topicDetails': topicDetails} ]);
+        if(Object.keys(errorObj).length > 0) {
+            res.status(400).json({
+                message: errorObj?.message,
+                detail: errorObj?.detail
+            })
+            return;
+        }
         const user = req?.user;
         const usersRef = db.collection('users');
         const snapshot = await usersRef.where('uid', '==', user).get();
@@ -474,8 +483,10 @@ exports.removeFavoriteTopic = async (req, res) => {
                 const favTopicIndex = userData?.favoriteTopics?.findIndex(el => el?.topicId === topicDetails?.topicId);
                 let favTopics = userData?.favoriteTopics;
                 if (favTopicIndex > -1) {
-                    favTopics?.splice(favTopicIndex);
+                    favTopics?.splice(favTopicIndex, 1);
                 }
+                console.log(favTopics, 'favTopics');
+                
                 let updatedData = {...userData, favoriteTopics: favTopics};
                 doc.ref.update(updatedData);
             }
@@ -578,7 +589,7 @@ exports.addTopic = async (req, res) => {
             })
             return;
         }
-        let topicData = { topicId, topicName, imageUrl, description, displayOrder, enabled: true }
+        let topicData = { topicId, topicName, imageUrl, description, displayOrder, enabled: true, topicCategoryId: categoryId }
         const topicsRef = db.collection('topics');
         const snapshot = await topicsRef.get();
         if (snapshot.empty) {
@@ -634,7 +645,10 @@ exports.editTopic = async (req, res) => {
         }
         topic.forEach(doc => {
             let docData = doc.data();
-            let data = { ...docData, topicName: topicName, imageUrl: imageUrl, description: description, enabled: enabled }
+            let searchTerm = [topicId?.toLowerCase(), categoryId?.toLowerCase()];
+            let topicNameSplit = topicName.split(" ");
+            topicNameSplit.map(el => searchTerm.push(el?.toLowerCase()));
+            let data = { ...docData, topicName: topicName, imageUrl: imageUrl, description: description, enabled: enabled, searchTerm: searchTerm }
             doc.ref.update(data);
         });
         res.status(201).json({

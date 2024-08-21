@@ -221,7 +221,7 @@ exports.removebookmarkedSnippet = async (req, res) => {
                 let bookmarkedUser = docData?.bookmarkedUser;
                 const bookmarkedItemIndex = docData?.bookmarkedUser?.findIndex(el => el === user);
                 if(bookmarkedItemIndex > -1) {
-                    bookmarkedUser?.splice(bookmarkedItemIndex);
+                    bookmarkedUser?.splice(bookmarkedItemIndex, 1);
                 }
                 let updatedData = {...docData, bookmarkedUser: bookmarkedUser};
                 doc.ref.update(updatedData);

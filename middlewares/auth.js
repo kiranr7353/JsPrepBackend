@@ -7,7 +7,7 @@ exports.isAuthenticatedUser = async (req, res, next) => {
     try {
         let token = req?.get('Authorization');
         console.log(token);
-        let refreshToken = req?.get('RefreshToken');
+        let refreshToken = req?.get('Refreshtoken');
         if (!token) {
             return res.status(401).json({
                 message: "Unathorized"
