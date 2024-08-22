@@ -124,11 +124,43 @@ exports.getTopicsFromCategories = async (req, res) => {
         }
         let docref = await db.collection('categories').doc(`${categoryId + '_cat852471JsPrep'}`).get();
         let topics = await db.collection('topics').where('categoryId', '==', docref.ref).get();
-        // let topics = await db.collection('topics').where('searchTerm', 'array-contains', 'javascript').get();
         if (topics.empty) {
             res.status(404).json({
                 message: 'No topics found',
                 detail: `No topics found for ${categoryId}`
+            })
+            return;
+        }
+        const topicsData = [];
+        topics.forEach(doc => {
+            topicsData.push(doc.data());
+        });
+        const topicsFromResponse = topicsData?.length > 0 && topicsData?.map(el => ({ topicId: el.topicId, topicName: el.topicName, imageUrl: el.imageUrl, displayOrder: el?.displayOrder, description: el?.description, enabled: el?.enabled, topicCategoryId: el?.topicCategoryId }));
+        res.status(200).json({
+            success: true,
+            topics: topicsFromResponse
+        })
+    } catch (error) {
+        handleFailError(res, error);
+    }
+}
+
+exports.searchTopics = async (req, res) => {
+    try {
+        const { searchText } = req.params;
+        let errorObj = handleValidations(res, [ {'searchText': searchText} ]);
+        if(Object.keys(errorObj).length > 0) {
+            res.status(400).json({
+                message: errorObj?.message,
+                detail: errorObj?.detail
+            })
+            return;
+        }
+        let topics = await db.collection('topics').where('searchTerm', 'array-contains', searchText).get();
+        if (topics.empty) {
+            res.status(404).json({
+                message: 'No topics found',
+                detail: `No topics found for ${searchText}`
             })
             return;
         }
@@ -612,8 +644,12 @@ exports.addTopic = async (req, res) => {
                 return;
             }
         }
+        let searchTerm = [topicId?.toLowerCase(), categoryId?.toLowerCase()];
+        let topicNameSplit = topicName.split(" ");
+        topicNameSplit.map(el => searchTerm.push(el?.toLowerCase()));
         const docRef = db.collection('topics').doc(`${topicId + `_cat_${categoryId}852471JsPrep`}`);
         topicData.categoryId = db.doc(`/categories/${categoryId}_cat852471JsPrep`);
+        topicData.searchTerm = searchTerm;
         await docRef.set(topicData);
         res.status(201).json({
             success: true,
@@ -645,10 +681,15 @@ exports.editTopic = async (req, res) => {
         }
         topic.forEach(doc => {
             let docData = doc.data();
-            let searchTerm = [topicId?.toLowerCase(), categoryId?.toLowerCase()];
-            let topicNameSplit = topicName.split(" ");
-            topicNameSplit.map(el => searchTerm.push(el?.toLowerCase()));
-            let data = { ...docData, topicName: topicName, imageUrl: imageUrl, description: description, enabled: enabled, searchTerm: searchTerm }
+            let data = {};
+            if(!docData?.searchTerm || docData?.searchTerm?.length === 0) {
+                let searchTerm = [topicId?.toLowerCase(), categoryId?.toLowerCase()];
+                let topicNameSplit = topicName.split(" ");
+                topicNameSplit.map(el => searchTerm.push(el?.toLowerCase()));
+                data = { ...docData, topicName: topicName, imageUrl: imageUrl, description: description, enabled: enabled, searchTerm: searchTerm }
+            } else {
+                data = { ...docData, topicName: topicName, imageUrl: imageUrl, description: description, enabled: enabled }
+            }
             doc.ref.update(data);
         });
         res.status(201).json({
