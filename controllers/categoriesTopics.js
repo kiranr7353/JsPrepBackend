@@ -156,7 +156,7 @@ exports.searchTopics = async (req, res) => {
             })
             return;
         }
-        let topics = await db.collection('topics').where('searchTerm', 'array-contains', searchText).get();
+        let topics = await db.collection('topics').where('searchTerm', 'array-contains', searchText.toLowerCase()).get();
         if (topics.empty) {
             res.status(404).json({
                 message: 'No topics found',
@@ -197,8 +197,12 @@ exports.createInterviewQuestions = async (req, res) => {
             })
             return;
         }
-        const payload = { categoryId: categoryId, topicId: topicId, questionId: questionId, question: question, data: data, enabled: true, createdAt: FieldValue.serverTimestamp() }
+        let payload = { categoryId: categoryId, topicId: topicId, questionId: questionId, question: question, data: data, enabled: true, createdAt: FieldValue.serverTimestamp() }
         const docRef = db.collection('interviewQ&A').doc(questionId);
+        let searchTerm = [question];
+        let questionSplit = question.split(" ");
+        questionSplit.map(el => searchTerm.push(el?.toLowerCase()));
+        payload.searchTerm = searchTerm
         await docRef.set(payload);
         res.status(201).json({
             success: true,
@@ -283,7 +287,7 @@ exports.deleteInterviewQuestion = async (req, res) => {
 
 exports.getInterviewQuestionsData = async (req, res) => {
     try {
-        const { topicId, categoryId, pageSize, pageNumber } = req.body;
+        const { topicId, categoryId, pageSize, pageNumber, searchText } = req.body;
         let errorObj = handleValidations(res, [ {'topicId': topicId}, {'categoryId': categoryId}, {'pageSize': pageSize}, {'pageNumber': pageNumber} ]);
         if(Object.keys(errorObj).length > 0) {
             res.status(400).json({
@@ -292,8 +296,15 @@ exports.getInterviewQuestionsData = async (req, res) => {
             })
             return;
         }
-        let questions = await db.collection('interviewQ&A').where('topicId', '==', topicId).where('categoryId', '==', categoryId).orderBy('createdAt').limit(pageSize).offset(pageSize * (pageNumber - 1)).get();
-        let count = await db.collection('interviewQ&A').where('topicId', '==', topicId).where('categoryId', '==', categoryId).count().get();
+        let questions;
+        let count;
+        if(searchText && searchText?.length > 0) {
+            questions = await db.collection('interviewQ&A').where('topicId', '==', topicId).where('categoryId', '==', categoryId).where('searchTerm', 'array-contains', searchText.toLowerCase()).orderBy('createdAt').limit(pageSize).offset(pageSize * (pageNumber - 1)).get();
+            count = await db.collection('interviewQ&A').where('topicId', '==', topicId).where('categoryId', '==', categoryId).where('searchTerm', 'array-contains', searchText.toLowerCase()).count().get();
+        } else {
+            questions = await db.collection('interviewQ&A').where('topicId', '==', topicId).where('categoryId', '==', categoryId).orderBy('createdAt').limit(pageSize).offset(pageSize * (pageNumber - 1)).get();
+            count = await db.collection('interviewQ&A').where('topicId', '==', topicId).where('categoryId', '==', categoryId).count().get();
+        }
         let totalSize = count.data().count;
         if (questions.empty) {
             res.status(404).json({
