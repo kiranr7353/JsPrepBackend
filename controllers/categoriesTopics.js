@@ -199,7 +199,7 @@ exports.createInterviewQuestions = async (req, res) => {
         }
         let payload = { categoryId: categoryId, topicId: topicId, questionId: questionId, question: question, data: data, enabled: true, createdAt: FieldValue.serverTimestamp() }
         const docRef = db.collection('interviewQ&A').doc(questionId);
-        let searchTerm = [question];
+        let searchTerm = [question.replace(/[^a-zA-Z ]/g, "")];
         let questionSplit = question.split(" ");
         questionSplit.map(el => searchTerm.push(el?.toLowerCase()));
         payload.searchTerm = searchTerm
