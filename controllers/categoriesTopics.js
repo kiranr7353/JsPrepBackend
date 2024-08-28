@@ -199,7 +199,7 @@ exports.createInterviewQuestions = async (req, res) => {
         }
         let payload = { categoryId: categoryId, topicId: topicId, questionId: questionId, question: question, data: data, enabled: true, createdAt: FieldValue.serverTimestamp() }
         const docRef = db.collection('interviewQ&A').doc(questionId);
-        let searchTerm = [question.replace(/[^a-zA-Z ]/g, "")];
+        let searchTerm = [question.replace(/\/?/g, '')];
         let questionSplit = question.split(" ");
         questionSplit.map(el => searchTerm.push(el?.toLowerCase()));
         payload.searchTerm = searchTerm
@@ -422,7 +422,7 @@ exports.removebookmarkedInterviewQuestion = async (req, res) => {
 
 exports.getBookmarkedInterviewQuestion = async (req, res) => {
     try {
-        const { topicId, categoryId, pageSize, pageNumber } = req.body;
+        const { topicId, categoryId, pageSize, pageNumber, searchText } = req.body;
         let errorObj = handleValidations(res, [ {'topicId': topicId}, {'categoryId': categoryId}, {'pageSize': pageSize}, {'pageNumber': pageNumber} ]);
         if(Object.keys(errorObj).length > 0) {
             res.status(400).json({
@@ -442,10 +442,13 @@ exports.getBookmarkedInterviewQuestion = async (req, res) => {
             })
             return;
         }
-        const questionsData = [];
+        let questionsData = [];
         questionRef.forEach(doc => {
             questionsData.push(doc.data());
         });
+        if(searchText && searchText?.length > 0) {
+            questionsData  = questionsData.filter(el => el.searchTerm.includes(searchText))
+        }
         const questionsFromResponse = questionsData?.length > 0 && questionsData?.map(el => ({ question: el?.question, questionId: el?.questionId, data: el?.data, enabled: el?.enabled }));
         res.status(200).json({
             success: true,
