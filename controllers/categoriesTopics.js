@@ -199,8 +199,9 @@ exports.createInterviewQuestions = async (req, res) => {
         }
         let payload = { categoryId: categoryId, topicId: topicId, questionId: questionId, question: question, data: data, enabled: true, createdAt: FieldValue.serverTimestamp() }
         const docRef = db.collection('interviewQ&A').doc(questionId);
-        let searchTerm = [question.replace(/\/?/g, '')];
-        let questionSplit = question.split(" ");
+        let rquestion = question.replace(/[&\/\\#,+()$~%.'":*?<>{}]/g,'');
+        let searchTerm = [rquestion];
+        let questionSplit = rquestion.split(" ");
         questionSplit.map(el => searchTerm.push(el?.toLowerCase()));
         payload.searchTerm = searchTerm
         await docRef.set(payload);
@@ -452,7 +453,7 @@ exports.getBookmarkedInterviewQuestion = async (req, res) => {
         const questionsFromResponse = questionsData?.length > 0 && questionsData?.map(el => ({ question: el?.question, questionId: el?.questionId, data: el?.data, enabled: el?.enabled }));
         res.status(200).json({
             success: true,
-            data: questionsFromResponse,
+            data: questionsFromResponse?.length > 0 ? questionsFromResponse : [],
             totalCount: totalSize
         })
     } catch (error) {

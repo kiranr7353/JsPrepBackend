@@ -26,6 +26,11 @@ exports.addProgrammingQA = async (req, res) => {
         }
         const payload = { categoryId: categoryId, topicId: topicId, titleId: titleId, title: title, data: data, enabled: true, createdAt: FieldValue.serverTimestamp() }
         const docRef = db.collection('programmingQA').doc(titleId);
+        let rtitle = title.replace(/[&\/\\#,+()$~%.'":*?<>{}]/g,'');
+        let searchTerm = [rtitle];
+        let titleSplit = rtitle.split(" ");
+        titleSplit.map(el => searchTerm.push(el?.toLowerCase()));
+        payload.searchTerm = searchTerm
         await docRef.set(payload);
         res.status(201).json({
             success: true,
@@ -110,7 +115,7 @@ exports.deleteProgrammingQA = async (req, res) => {
 
 exports.getProgrammingQAData = async (req, res) => {
     try {
-        const { topicId, categoryId, pageSize, pageNumber } = req.body;
+        const { topicId, categoryId, pageSize, pageNumber, searchText } = req.body;
         let errorObj = handleValidations(res, [ {'topicId': topicId}, {'categoryId': categoryId}, {'pageSize': pageSize}, {'pageNumber': pageNumber} ]);
         if(Object.keys(errorObj).length > 0) {
             res.status(400).json({
@@ -119,8 +124,15 @@ exports.getProgrammingQAData = async (req, res) => {
             })
             return;
         }
-        let titlRef = await db.collection('programmingQA').where('topicId', '==', topicId).where('categoryId', '==', categoryId).orderBy('createdAt').limit(pageSize).offset(pageSize * (pageNumber - 1)).get();
-        let count = await db.collection('programmingQA').where('topicId', '==', topicId).where('categoryId', '==', categoryId).count().get();
+        let titlRef;
+        let count;
+        if(searchText && searchText?.length > 0) {
+            titlRef = await db.collection('programmingQA').where('topicId', '==', topicId).where('categoryId', '==', categoryId).where('searchTerm', 'array-contains', searchText.toLowerCase()).orderBy('createdAt').limit(pageSize).offset(pageSize * (pageNumber - 1)).get();
+            count = await db.collection('programmingQA').where('topicId', '==', topicId).where('categoryId', '==', categoryId).where('searchTerm', 'array-contains', searchText.toLowerCase()).count().get();
+        } else {
+            titlRef = await db.collection('programmingQA').where('topicId', '==', topicId).where('categoryId', '==', categoryId).orderBy('createdAt').limit(pageSize).offset(pageSize * (pageNumber - 1)).get();
+            count = await db.collection('programmingQA').where('topicId', '==', topicId).where('categoryId', '==', categoryId).count().get();
+        }
         let totalSize = count.data().count;
         if (titlRef.empty) {
             res.status(404).json({
@@ -238,7 +250,7 @@ exports.removebookmarkedProgrammingQA = async (req, res) => {
 
 exports.getBookmarkedProgrammingQA = async (req, res) => {
     try {
-        const { topicId, categoryId, pageSize, pageNumber } = req.body;
+        const { topicId, categoryId, pageSize, pageNumber, searchText } = req.body;
         let errorObj = handleValidations(res, [ {'topicId': topicId}, {'categoryId': categoryId}, {'pageSize': pageSize}, {'pageNumber': pageNumber} ]);
         if(Object.keys(errorObj).length > 0) {
             res.status(400).json({
@@ -262,10 +274,13 @@ exports.getBookmarkedProgrammingQA = async (req, res) => {
         titleRef.forEach(doc => {
             snippetData.push(doc.data());
         });
+        if(searchText && searchText?.length > 0) {
+            snippetData  = snippetData.filter(el => el.searchTerm.includes(searchText))
+        }
         const snippetFromResponse = snippetData?.length > 0 && snippetData?.map(el => ({ title: el?.title, titleId: el?.titleId, data: el?.data, enabled: el?.enabled }));
         res.status(200).json({
             success: true,
-            data: snippetFromResponse,
+            data: snippetFromResponse?.length > 0 ? snippetFromResponse : [],
             totalCount: totalSize
         })
     } catch (error) {
