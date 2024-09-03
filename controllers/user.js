@@ -1,5 +1,6 @@
 const admin = require('../firebaseConfig');
 const fetch = require('node-fetch');
+const { OAuth2Client } = require('google-auth-library');
 const googleAuth = require('google-auth-library');
 const SCOPES = ['https://www.googleapis.com/auth/cloud-platform'];
 const { handleUserSignUpErrors, handleUserLoginErrors } = require('../utils/handleAuthErrors');
@@ -9,6 +10,12 @@ const { handleRegisterValidation } = require('../utils/handleValidation');
 const db = admin.firestore();
 const auth = admin.auth();
 db.settings({ ignoreUndefinedProperties: true })
+
+const oAuth2Client = new OAuth2Client(
+    "468010744164-2pa9lhskkb50fnvibujg9os8pa8ootcr.apps.googleusercontent.com",
+    "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",
+    'postmessage',
+);
 
 exports.register = async (req, res) => {
     const { phoneNumber, firstName, lastName, dob, password, confirmPassword, idToken, refreshToken, email, code } = req.body;
@@ -57,6 +64,21 @@ exports.register = async (req, res) => {
     })
 }
 
+exports.googleRegister = async (req, res) => {
+    const { firstName, lastName, idToken, refreshToken, email } = req.body;
+    const userData = { firstName, lastName, email };
+    auth.verifyIdToken(idToken).then(async (decodedToken) => {
+        if (decodedToken?.uid) {
+            const setUserData = { ...userData, uid: decodedToken?.uid, email: decodedToken?.email }
+            const docRef = db.collection('users').doc(decodedToken?.uid);
+            await docRef.set(setUserData);
+            setToken(201, idToken, refreshToken, res, userData);
+        }
+    }).catch(error => {
+        handleFailError(res, error)
+    })
+}
+
 exports.login = async (req, res) => {
     const { idToken, refreshToken } = req.body;
     auth.verifyIdToken(idToken).then(async (decodedToken) => {
@@ -72,6 +94,19 @@ exports.login = async (req, res) => {
     }).catch(error => {
         handleFailError(res, error)
     })
+}
+
+exports.googleLogin = async (req, res) => {
+    const { code } = req.body;
+    const { tokens } = await oAuth2Client.getToken(code);
+    if(tokens) {
+        res.status(201).json(tokens);
+    } else {
+        res.status(500).json({
+            message: 'Something went wrong. Please try again later',
+            detail: `Something went wrong. Please try again later`
+        })
+    }
 }
 
 exports.signInWithGoogle = async (req, res) => {
@@ -96,6 +131,31 @@ exports.signInWithGoogle = async (req, res) => {
 }
 
 exports.getUserDetails = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const userRef = db.collection('users');
+        const snapshot = await userRef.where('uid', '==', userId).get();
+        if (snapshot.empty) {
+            res.status(404).json({
+                message: 'No user found',
+                detail: "No user found for the given id"
+            })
+            return;
+        }
+        const userDetails = {}; 
+        snapshot.forEach(doc => {
+            Object.assign(userDetails, doc.data());
+        });
+        res.status(200).json({
+            success: true,
+            userInfo: userDetails
+        })
+    } catch (error) {
+        handleFailError(res, error);
+    }
+}
+
+exports.checkUser = async (req, res) => {
     try {
         const { userId } = req.params;
         const userRef = db.collection('users');

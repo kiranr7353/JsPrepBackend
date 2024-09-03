@@ -1,14 +1,16 @@
 const express = require('express');
 
-const { register, login, getUserDetails, signInWithGoogle, updateUserDetails, deleteUser, getFavoriteTopics } = require('../controllers/user');
+const { register, login, getUserDetails, updateUserDetails, deleteUser, getFavoriteTopics, googleLogin, checkUser, googleRegister } = require('../controllers/user');
 const { isAuthenticatedUser } = require('../middlewares/auth');
 
 
 
 const router = express.Router();
 
+router.get("/checkuser/:userId", checkUser);
+router.post("/google/register", googleRegister);
 router.post("/register", register);
-router.post("/sign/googleSignIn", signInWithGoogle);
+router.post("/login/googleLoginIn", googleLogin);
 router.post("/login", login);
 router.get("/getFavoriteTopics", isAuthenticatedUser, getFavoriteTopics);
 router.get("/delete/:userId", isAuthenticatedUser, deleteUser);
