@@ -1,7 +1,7 @@
 const express = require('express');
 const { getCategories, getTopicsFromCategories, getInterviewQuestionsData, createInterviewQuestions, updateInterviewQuestion, setFavoriteTopic, addCategory, addTopic, editCategory, editTopic, deleteTopic, getCategoriesList, getCategoriesFromList, deleteInterviewQuestion, bookmarkInterviewQuestion, getBookmarkedInterviewQuestion, removebookmarkedInterviewQuestion, removeFavoriteTopic, searchTopics } = require('../controllers/categoriesTopics');
 const { isAuthenticatedUser } = require('../middlewares/auth');
-
+const { handleRoles } = require('../middlewares/handleRoles')
 
 const router = express.Router();
 
@@ -10,7 +10,7 @@ router.get("/getCategories", isAuthenticatedUser, getCategories);
 router.get("/getCategoriesFromList/:categoryList", isAuthenticatedUser, getCategoriesFromList);
 router.get("/getTopics/:categoryId", isAuthenticatedUser, getTopicsFromCategories);
 router.post("/getInterviewQA", isAuthenticatedUser, getInterviewQuestionsData);
-router.post("/createInterviewQuestions", isAuthenticatedUser, createInterviewQuestions);
+router.post("/createInterviewQuestions", isAuthenticatedUser, handleRoles, createInterviewQuestions);
 router.post("/updateInterviewQuestion", isAuthenticatedUser, updateInterviewQuestion);
 router.post("/deleteInterviewQuestion", isAuthenticatedUser, deleteInterviewQuestion);
 router.post("/bookmarkInterviewQuestion", isAuthenticatedUser, bookmarkInterviewQuestion);

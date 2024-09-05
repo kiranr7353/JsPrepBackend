@@ -5,6 +5,7 @@ const db = admin.firestore();
 const { formidable } = require('formidable');
 const uuid = require('uuid-v4');
 const { handleValidations } = require('../utils/handleValidation');
+const { requestData } = require('../utils/requests');
 
 const bucket = admin.storage().bucket();
 
@@ -59,8 +60,8 @@ exports.getCategories = async (req, res) => {
 exports.getCategoriesFromList = async (req, res) => {
     try {
         const { categoryList } = req.params;
-        let errorObj = handleValidations(res, [ {'categoryList': categoryList} ]);
-        if(Object.keys(errorObj).length > 0) {
+        let errorObj = handleValidations(res, [{ 'categoryList': categoryList }]);
+        if (Object.keys(errorObj).length > 0) {
             res.status(400).json({
                 message: errorObj?.message,
                 detail: errorObj?.detail
@@ -114,8 +115,8 @@ exports.getCategoriesFromList = async (req, res) => {
 exports.getTopicsFromCategories = async (req, res) => {
     try {
         const { categoryId } = req.params;
-        let errorObj = handleValidations(res, [ {'categoryId': categoryId} ]);
-        if(Object.keys(errorObj).length > 0) {
+        let errorObj = handleValidations(res, [{ 'categoryId': categoryId }]);
+        if (Object.keys(errorObj).length > 0) {
             res.status(400).json({
                 message: errorObj?.message,
                 detail: errorObj?.detail
@@ -148,8 +149,8 @@ exports.getTopicsFromCategories = async (req, res) => {
 exports.searchTopics = async (req, res) => {
     try {
         const { searchText } = req.params;
-        let errorObj = handleValidations(res, [ {'searchText': searchText} ]);
-        if(Object.keys(errorObj).length > 0) {
+        let errorObj = handleValidations(res, [{ 'searchText': searchText }]);
+        if (Object.keys(errorObj).length > 0) {
             res.status(400).json({
                 message: errorObj?.message,
                 detail: errorObj?.detail
@@ -180,9 +181,9 @@ exports.searchTopics = async (req, res) => {
 
 exports.createInterviewQuestions = async (req, res) => {
     try {
-        const { categoryId, topicId, questionId, question, data } = req.body;
-        let errorObj = handleValidations(res, [ {'questionId': questionId}, {'data': data}, {'question': question}, {'categoryId': categoryId}, {'topicId': topicId} ]);
-        if(Object.keys(errorObj).length > 0) {
+        const { categoryId, topicId, questionId, question, data, type = 'add', requestId = '' } = req.body;
+        let errorObj = handleValidations(res, [{ 'questionId': questionId }, { 'data': data }, { 'question': question }, { 'categoryId': categoryId }, { 'topicId': topicId }]);
+        if (Object.keys(errorObj).length > 0) {
             res.status(400).json({
                 message: errorObj?.message,
                 detail: errorObj?.detail
@@ -199,16 +200,20 @@ exports.createInterviewQuestions = async (req, res) => {
         }
         let payload = { categoryId: categoryId, topicId: topicId, questionId: questionId, question: question, data: data, enabled: true, createdAt: FieldValue.serverTimestamp() }
         const docRef = db.collection('interviewQ&A').doc(questionId);
-        let rquestion = question.replace(/[&\/\\#,+()$~%.'":*?<>{}]/g,'');
+        let rquestion = question.replace(/[&\/\\#,+()$~%.'":*?<>{}]/g, '');
         let searchTerm = [rquestion];
         let questionSplit = rquestion.split(" ");
         questionSplit.map(el => searchTerm.push(el?.toLowerCase()));
-        payload.searchTerm = searchTerm
-        await docRef.set(payload);
-        res.status(201).json({
-            success: true,
-            message: 'QA Added Successfully'
-        })
+        payload.searchTerm = searchTerm;
+        if (type === 'add') {
+            await docRef.set(payload);
+            res.status(201).json({
+                success: true,
+                message: 'QA Added Successfully'
+            })
+        } else {
+            requestData(req, res, payload, requestId)
+        }
     } catch (error) {
         handleFailError(res, error);
     }
@@ -217,8 +222,8 @@ exports.createInterviewQuestions = async (req, res) => {
 exports.updateInterviewQuestion = async (req, res) => {
     try {
         const { questionId, data, question, enabled } = req.body;
-        let errorObj = handleValidations(res, [ {'questionId': questionId}, {'data': data}, {'question': question}, {'enabled': enabled} ]);
-        if(Object.keys(errorObj).length > 0) {
+        let errorObj = handleValidations(res, [{ 'questionId': questionId }, { 'data': data }, { 'question': question }, { 'enabled': enabled }]);
+        if (Object.keys(errorObj).length > 0) {
             res.status(400).json({
                 message: errorObj?.message,
                 detail: errorObj?.detail
@@ -250,8 +255,8 @@ exports.updateInterviewQuestion = async (req, res) => {
 exports.deleteInterviewQuestion = async (req, res) => {
     try {
         const { questionId } = req.body;
-        let errorObj = handleValidations(res, [ {'questionId': questionId} ]);
-        if(Object.keys(errorObj).length > 0) {
+        let errorObj = handleValidations(res, [{ 'questionId': questionId }]);
+        if (Object.keys(errorObj).length > 0) {
             res.status(400).json({
                 message: errorObj?.message,
                 detail: errorObj?.detail
@@ -289,8 +294,8 @@ exports.deleteInterviewQuestion = async (req, res) => {
 exports.getInterviewQuestionsData = async (req, res) => {
     try {
         const { topicId, categoryId, pageSize, pageNumber, searchText } = req.body;
-        let errorObj = handleValidations(res, [ {'topicId': topicId}, {'categoryId': categoryId}, {'pageSize': pageSize}, {'pageNumber': pageNumber} ]);
-        if(Object.keys(errorObj).length > 0) {
+        let errorObj = handleValidations(res, [{ 'topicId': topicId }, { 'categoryId': categoryId }, { 'pageSize': pageSize }, { 'pageNumber': pageNumber }]);
+        if (Object.keys(errorObj).length > 0) {
             res.status(400).json({
                 message: errorObj?.message,
                 detail: errorObj?.detail
@@ -299,7 +304,7 @@ exports.getInterviewQuestionsData = async (req, res) => {
         }
         let questions;
         let count;
-        if(searchText && searchText?.length > 0) {
+        if (searchText && searchText?.length > 0) {
             questions = await db.collection('interviewQ&A').where('topicId', '==', topicId).where('categoryId', '==', categoryId).where('searchTerm', 'array-contains', searchText.toLowerCase()).orderBy('createdAt').limit(pageSize).offset(pageSize * (pageNumber - 1)).get();
             count = await db.collection('interviewQ&A').where('topicId', '==', topicId).where('categoryId', '==', categoryId).where('searchTerm', 'array-contains', searchText.toLowerCase()).count().get();
         } else {
@@ -333,8 +338,8 @@ exports.bookmarkInterviewQuestion = async (req, res) => {
     try {
         const { questionId } = req.body;
         const user = req?.user;
-        let errorObj = handleValidations(res, [ {'questionId': questionId} ]);
-        if(Object.keys(errorObj).length > 0) {
+        let errorObj = handleValidations(res, [{ 'questionId': questionId }]);
+        if (Object.keys(errorObj).length > 0) {
             res.status(400).json({
                 message: errorObj?.message,
                 detail: errorObj?.detail
@@ -362,12 +367,12 @@ exports.bookmarkInterviewQuestion = async (req, res) => {
                     return;
                 } else {
                     let bookmarkUser = [...docData?.bookmarkedUser, user];
-                    let updateData = {...docData, bookmarkedUser: bookmarkUser };
+                    let updateData = { ...docData, bookmarkedUser: bookmarkUser };
                     doc.ref.update(updateData);
                 }
             } else {
                 let bookmarkUser = [user];
-                let updateData = {...docData, bookmarkedUser: bookmarkUser };
+                let updateData = { ...docData, bookmarkedUser: bookmarkUser };
                 doc.ref.update(updateData);
             }
         });
@@ -384,8 +389,8 @@ exports.removebookmarkedInterviewQuestion = async (req, res) => {
     try {
         const { questionId } = req.body;
         const user = req?.user;
-        let errorObj = handleValidations(res, [ {'questionId': questionId} ]);
-        if(Object.keys(errorObj).length > 0) {
+        let errorObj = handleValidations(res, [{ 'questionId': questionId }]);
+        if (Object.keys(errorObj).length > 0) {
             res.status(400).json({
                 message: errorObj?.message,
                 detail: errorObj?.detail
@@ -405,10 +410,10 @@ exports.removebookmarkedInterviewQuestion = async (req, res) => {
             if (docData?.bookmarkedUser && docData?.bookmarkedUser?.length > 0) {
                 let bookmarkedUser = docData?.bookmarkedUser;
                 const bookmarkedItemIndex = docData?.bookmarkedUser?.findIndex(el => el === user);
-                if(bookmarkedItemIndex > -1) {
+                if (bookmarkedItemIndex > -1) {
                     bookmarkedUser?.splice(bookmarkedItemIndex, 1);
                 }
-                let updatedData = {...docData, bookmarkedUser: bookmarkedUser};
+                let updatedData = { ...docData, bookmarkedUser: bookmarkedUser };
                 doc.ref.update(updatedData);
             }
         });
@@ -424,8 +429,8 @@ exports.removebookmarkedInterviewQuestion = async (req, res) => {
 exports.getBookmarkedInterviewQuestion = async (req, res) => {
     try {
         const { topicId, categoryId, pageSize, pageNumber, searchText } = req.body;
-        let errorObj = handleValidations(res, [ {'topicId': topicId}, {'categoryId': categoryId}, {'pageSize': pageSize}, {'pageNumber': pageNumber} ]);
-        if(Object.keys(errorObj).length > 0) {
+        let errorObj = handleValidations(res, [{ 'topicId': topicId }, { 'categoryId': categoryId }, { 'pageSize': pageSize }, { 'pageNumber': pageNumber }]);
+        if (Object.keys(errorObj).length > 0) {
             res.status(400).json({
                 message: errorObj?.message,
                 detail: errorObj?.detail
@@ -447,8 +452,8 @@ exports.getBookmarkedInterviewQuestion = async (req, res) => {
         questionRef.forEach(doc => {
             questionsData.push(doc.data());
         });
-        if(searchText && searchText?.length > 0) {
-            questionsData  = questionsData.filter(el => el.searchTerm.includes(searchText))
+        if (searchText && searchText?.length > 0) {
+            questionsData = questionsData.filter(el => el.searchTerm.includes(searchText))
         }
         const questionsFromResponse = questionsData?.length > 0 && questionsData?.map(el => ({ question: el?.question, questionId: el?.questionId, data: el?.data, enabled: el?.enabled }));
         res.status(200).json({
@@ -464,8 +469,8 @@ exports.getBookmarkedInterviewQuestion = async (req, res) => {
 exports.setFavoriteTopic = async (req, res) => {
     try {
         const { topicDetails } = req.body;
-        let errorObj = handleValidations(res, [ {'topicDetails': topicDetails} ]);
-        if(Object.keys(errorObj).length > 0) {
+        let errorObj = handleValidations(res, [{ 'topicDetails': topicDetails }]);
+        if (Object.keys(errorObj).length > 0) {
             res.status(400).json({
                 message: errorObj?.message,
                 detail: errorObj?.detail
@@ -533,8 +538,8 @@ exports.removeFavoriteTopic = async (req, res) => {
                     favTopics?.splice(favTopicIndex, 1);
                 }
                 console.log(favTopics, 'favTopics');
-                
-                let updatedData = {...userData, favoriteTopics: favTopics};
+
+                let updatedData = { ...userData, favoriteTopics: favTopics };
                 doc.ref.update(updatedData);
             }
             res.status(201).json({
@@ -550,8 +555,8 @@ exports.removeFavoriteTopic = async (req, res) => {
 exports.addCategory = async (req, res) => {
     try {
         const { categoryId, categoryName, enabled, imageUrl } = req.body;
-        let errorObj = handleValidations(res, [ {'categoryName': categoryName}, {'categoryId': categoryId}, {'enabled': enabled}, {'imageUrl': imageUrl} ]);
-        if(Object.keys(errorObj).length > 0) {
+        let errorObj = handleValidations(res, [{ 'categoryName': categoryName }, { 'categoryId': categoryId }, { 'enabled': enabled }, { 'imageUrl': imageUrl }]);
+        if (Object.keys(errorObj).length > 0) {
             res.status(400).json({
                 message: errorObj?.message,
                 detail: errorObj?.detail
@@ -595,8 +600,8 @@ exports.addCategory = async (req, res) => {
 exports.editCategory = async (req, res) => {
     try {
         const { categoryId, categoryName, enabled, imageUrl, description } = req.body;
-        let errorObj = handleValidations(res, [ {'categoryName': categoryName}, {'categoryId': categoryId}, {'enabled': enabled}, {'imageUrl': imageUrl}, {'description': description} ]);
-        if(Object.keys(errorObj).length > 0) {
+        let errorObj = handleValidations(res, [{ 'categoryName': categoryName }, { 'categoryId': categoryId }, { 'enabled': enabled }, { 'imageUrl': imageUrl }, { 'description': description }]);
+        if (Object.keys(errorObj).length > 0) {
             res.status(400).json({
                 message: errorObj?.message,
                 detail: errorObj?.detail
@@ -628,8 +633,8 @@ exports.editCategory = async (req, res) => {
 exports.addTopic = async (req, res) => {
     try {
         const { topicId, topicName, imageUrl, categoryId, description, displayOrder } = req.body;
-        let errorObj = handleValidations(res, [ {'topicId': topicId}, {'categoryId': categoryId}, {'topicName': topicName}, {'imageUrl': imageUrl}, {'description': description}, { 'displayOrder': displayOrder } ]);
-        if(Object.keys(errorObj).length > 0) {
+        let errorObj = handleValidations(res, [{ 'topicId': topicId }, { 'categoryId': categoryId }, { 'topicName': topicName }, { 'imageUrl': imageUrl }, { 'description': description }, { 'displayOrder': displayOrder }]);
+        if (Object.keys(errorObj).length > 0) {
             res.status(400).json({
                 message: errorObj?.message,
                 detail: errorObj?.detail
@@ -678,8 +683,8 @@ exports.addTopic = async (req, res) => {
 exports.editTopic = async (req, res) => {
     try {
         const { topicId, topicName, imageUrl, categoryId, description, enabled } = req.body;
-        let errorObj = handleValidations(res, [ {'topicId': topicId}, {'categoryId': categoryId}, {'topicName': topicName}, {'imageUrl': imageUrl}, {'description': description}, { 'enabled': enabled } ]);
-        if(Object.keys(errorObj).length > 0) {
+        let errorObj = handleValidations(res, [{ 'topicId': topicId }, { 'categoryId': categoryId }, { 'topicName': topicName }, { 'imageUrl': imageUrl }, { 'description': description }, { 'enabled': enabled }]);
+        if (Object.keys(errorObj).length > 0) {
             res.status(400).json({
                 message: errorObj?.message,
                 detail: errorObj?.detail
@@ -697,7 +702,7 @@ exports.editTopic = async (req, res) => {
         topic.forEach(doc => {
             let docData = doc.data();
             let data = {};
-            if(!docData?.searchTerm || docData?.searchTerm?.length === 0) {
+            if (!docData?.searchTerm || docData?.searchTerm?.length === 0) {
                 let searchTerm = [topicId?.toLowerCase(), categoryId?.toLowerCase()];
                 let topicNameSplit = topicName.split(" ");
                 topicNameSplit.map(el => searchTerm.push(el?.toLowerCase()));
@@ -719,8 +724,8 @@ exports.editTopic = async (req, res) => {
 exports.deleteTopic = async (req, res) => {
     try {
         const { topicId, topicName, categoryId } = req.body;
-        let errorObj = handleValidations(res, [ {'topicId': topicId}, {'categoryId': categoryId}, {'topicName': topicName} ]);
-        if(Object.keys(errorObj).length > 0) {
+        let errorObj = handleValidations(res, [{ 'topicId': topicId }, { 'categoryId': categoryId }, { 'topicName': topicName }]);
+        if (Object.keys(errorObj).length > 0) {
             res.status(400).json({
                 message: errorObj?.message,
                 detail: errorObj?.detail
