@@ -18,8 +18,9 @@ const oAuth2Client = new OAuth2Client(
 );
 
 exports.register = async (req, res) => {
-    const { phoneNumber, firstName, lastName, dob, password, confirmPassword, idToken, refreshToken, email, code } = req.body;
-    const userData = { phoneNumber, firstName, lastName, dob, code };
+    const { phoneNumber, firstName, lastName, dob, password, confirmPassword, idToken, refreshToken, email, code, platForm } = req.body;
+    let phoneCode = code ? code : '+91'
+    const userData = { phoneNumber, firstName, lastName, dob, phoneCode, platForm: platForm ? platForm : 'web' };
     if(!firstName) {
         handleRegisterValidation(res, firstName, 'Missing mandatory field', "Please enter First Name", 400);
         return;
