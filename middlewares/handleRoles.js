@@ -12,9 +12,6 @@ exports.handleRoles = async (req, res, next) => {
         snapshot.forEach((doc) => {
             userData = doc.data();
         });
-        console.log(userData);
-        console.log(userData?.role, 'role');
-        
        if(userData?.role && (userData?.role === 'superAdmin' || userData?.role === 'admin')) {
           next();
        } else {

@@ -1,5 +1,6 @@
 const admin = require('../firebaseConfig');
 const fetch = require('node-fetch');
+const { GoogleGenerativeAI } = require("@google/generative-ai");
 const { OAuth2Client } = require('google-auth-library');
 const googleAuth = require('google-auth-library');
 const SCOPES = ['https://www.googleapis.com/auth/cloud-platform'];
@@ -20,7 +21,7 @@ const oAuth2Client = new OAuth2Client(
 exports.register = async (req, res) => {
     const { phoneNumber, firstName, lastName, dob, password, confirmPassword, idToken, refreshToken, email, code, platForm } = req.body;
     let phoneCode = code ? code : '+91'
-    const userData = { phoneNumber, firstName, lastName, dob, phoneCode, platForm: platForm ? platForm : 'web' };
+    const userData = { phoneNumber, firstName, lastName, dob, phoneCode, platForm: platForm ? platForm : 'web', role: 'user' };
     if(!firstName) {
         handleRegisterValidation(res, firstName, 'Missing mandatory field', "Please enter First Name", 400);
         return;
@@ -67,7 +68,7 @@ exports.register = async (req, res) => {
 
 exports.googleRegister = async (req, res) => {
     const { firstName, lastName, idToken, refreshToken, email } = req.body;
-    const userData = { firstName, lastName, email };
+    const userData = { firstName, lastName, email, role: 'user' };
     auth.verifyIdToken(idToken).then(async (decodedToken) => {
         if (decodedToken?.uid) {
             const setUserData = { ...userData, uid: decodedToken?.uid, email: decodedToken?.email }
@@ -259,5 +260,22 @@ exports.deleteUser = async(req, res) => {
         })
     } catch (error) {
         handleFailError(res, error);
+    }
+}
+
+exports.genAIChat = async(req, res) => {
+    const genAI = new GoogleGenerativeAI('AIzaSyCRKrP2sHoXOEOcfP9bLsgw6m-UBLBUk7s');
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const { message } = req.body;
+    const result = await model.generateContent(message);
+    console.log(result.response.text());
+    if(result.response.text()) {
+        res.status(201).json({
+            response: result.response.text()
+        })
+    } else {
+        res.status(500).json({
+            message: 'Something went wrong. Please try again later'
+        })
     }
 }

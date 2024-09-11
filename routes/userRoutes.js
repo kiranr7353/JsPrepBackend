@@ -1,6 +1,6 @@
 const express = require('express');
 
-const { register, login, getUserDetails, updateUserDetails, deleteUser, getFavoriteTopics, googleLogin, checkUser, googleRegister } = require('../controllers/user');
+const { register, login, getUserDetails, updateUserDetails, deleteUser, getFavoriteTopics, googleLogin, checkUser, googleRegister, genAIChat } = require('../controllers/user');
 const { isAuthenticatedUser } = require('../middlewares/auth');
 
 
@@ -9,6 +9,7 @@ const router = express.Router();
 
 router.get("/checkuser/:userId", checkUser);
 router.post("/google/register", googleRegister);
+router.post("/aiChat", genAIChat);
 router.post("/register", register);
 router.post("/login/googleLoginIn", googleLogin);
 router.post("/login", login);
