@@ -312,6 +312,7 @@ exports.getInterviewQuestionsData = async (req, res) => {
             count = await db.collection('interviewQ&A').where('topicId', '==', topicId).where('categoryId', '==', categoryId).count().get();
         }
         let totalSize = count.data().count;
+        let pages = Math.ceil(totalSize / 25);
         if (questions.empty) {
             res.status(404).json({
                 message: 'No data found',
@@ -327,7 +328,8 @@ exports.getInterviewQuestionsData = async (req, res) => {
         res.status(200).json({
             success: true,
             data: questionsFromResponse,
-            totalCount: totalSize
+            totalCount: totalSize,
+            pages: pages
         })
     } catch (error) {
         handleFailError(res, error);
@@ -441,6 +443,7 @@ exports.getBookmarkedInterviewQuestion = async (req, res) => {
         let questionRef = await db.collection('interviewQ&A').where('topicId', '==', topicId).where('categoryId', '==', categoryId).where('bookmarkedUser', 'array-contains', user).orderBy('createdAt').limit(pageSize).offset(pageSize * (pageNumber - 1)).get();
         let count = await db.collection('interviewQ&A').where('topicId', '==', topicId).where('categoryId', '==', categoryId).where('bookmarkedUser', 'array-contains', user).count().get();
         let totalSize = count.data().count;
+        let pages = Math.ceil(totalSize / 25);
         if (questionRef.empty) {
             res.status(404).json({
                 message: 'No data found',
@@ -459,7 +462,8 @@ exports.getBookmarkedInterviewQuestion = async (req, res) => {
         res.status(200).json({
             success: true,
             data: questionsFromResponse?.length > 0 ? questionsFromResponse : [],
-            totalCount: totalSize
+            totalCount: totalSize,
+            pages: pages
         })
     } catch (error) {
         handleFailError(res, error);
