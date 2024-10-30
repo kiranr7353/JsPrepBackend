@@ -212,9 +212,10 @@ exports.editDescriptionInSection = async (req, res) => {
         })
         return;
     }).catch(err => {
+        console.log(err)
         res.status(400).json({
             message: 'Update failed',
-            detail: `${title} update failed`
+            detail: err ? err?.details : `${title} update failed`
         })
         return;
     })

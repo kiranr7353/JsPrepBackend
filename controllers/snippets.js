@@ -16,14 +16,6 @@ exports.addSnippets = async (req, res) => {
             })
             return;
         }
-        let titleRef = await db.collection('snippets').where('title', '==', title).get();
-        if (!titleRef.empty) {
-            res.status(404).json({
-                message: 'Duplicate Entry',
-                detail: `Dunplicate question found for ${title}`
-            })
-            return;
-        }
         const payload = { categoryId: categoryId, topicId: topicId, titleId: titleId, title: title, data: data, enabled: true, createdAt: FieldValue.serverTimestamp() }
         const docRef = db.collection('snippets').doc(titleId);
         let rtitle = title.replace(/[&\/\\#,+()$~%.'":*?<>{}]/g,'');
@@ -134,6 +126,7 @@ exports.getSnippetsData = async (req, res) => {
             count = await db.collection('snippets').where('topicId', '==', topicId).where('categoryId', '==', categoryId).count().get();
         }
         let totalSize = count.data().count;
+        let pages = Math.ceil(totalSize / 25);
         if (titlRef.empty) {
             res.status(404).json({
                 message: 'No data found',
@@ -149,7 +142,8 @@ exports.getSnippetsData = async (req, res) => {
         res.status(200).json({
             success: true,
             data: snippetFromResponse,
-            totalCount: totalSize
+            totalCount: totalSize,
+            pages: pages
         })
     } catch (error) {
         handleFailError(res, error);
